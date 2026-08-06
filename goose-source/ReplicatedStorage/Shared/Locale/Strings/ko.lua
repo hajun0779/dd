@@ -622,4 +622,35 @@ return {
 	warmth_panel_drop = "황금알은 내 기지 위로 떨어집니다. %s 안에 직접 가서 주워야 합니다.",
 	warmth_panel_leave = "지금 나가도 %s 동안은 그대로지만, 그 뒤로는 분당 %d씩 식습니다.",
 	warmth_panel_stat = "지금까지 주운 황금알 %d개",
+
+	-- 연출 (관리자)
+	show_aurora = "오로라",
+	show_storm = "폭풍우",
+	show_meteor = "유성우",
+	show_sakura = "벚꽃 바람",
+	show_disco = "디스코 나이트",
+	show_frost = "혹한",
+	show_rift = "대균열",
+	show_goldrain = "황금비",
+	show_nebula = "성운",
+	show_taco = "타코 파티",
+
+	admin_cmd_show = "연출 실행",
+	admin_cmd_show_desc = "맵 전체 연출을 켠다. showId: Aurora, Storm, Meteor, Sakura, Disco, Frost, Rift, GoldRain, Nebula, Taco",
+	admin_cmd_show_stop = "연출 중지",
+	admin_cmd_show_stop_desc = "지금 도는 연출을 즉시 끄고 조명을 되돌린다.",
+	admin_cmd_floor_two = "2층 열기/닫기",
+	admin_cmd_floor_two_desc = "도감 조건과 상관없이 그 사람의 기지 2층을 열거나 닫는다.",
+	admin_param_show = "연출 ID",
+	admin_param_seconds = "길이(초, 0이면 기본값)",
+	admin_param_unlocked = "열기",
+
+	-- 2층
+	floor_guide_title = "2층이 열렸습니다",
+	floor_guide_body = "이 길로 올라가세요",
+	floor_welcome_title = "2층에 오신 걸 환영합니다!",
+	floor_welcome_body = "슬롯이 %d칸 늘어나 총 %d칸이 되었습니다.",
+	floor_unlocked_toast = "도감을 채워 2층이 열렸습니다! 슬롯 +%d",
+	index_quest_title = "도감 %d개 모으기 → 2층 해금",
+	index_quest_done = "DONE!",
 }

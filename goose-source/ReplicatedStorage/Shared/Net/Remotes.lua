@@ -82,6 +82,11 @@ Remotes.Definitions = {
 	RouletteGetState = { type = "Function", dir = "C2S", rate = 4 },
 	RouletteSpin = { type = "Function", dir = "C2S", rate = 2 },
 	RouletteSync = { type = "Event", dir = "S2C" },
+	ShowSync = { type = "Event", dir = "S2C" },
+
+	FloorSync = { type = "Event", dir = "S2C" },
+	FloorGetState = { type = "Function", dir = "C2S", rate = 4 },
+
 	WarmthSync = { type = "Event", dir = "S2C" },
 	WarmthDrop = { type = "Event", dir = "S2C" },
 	WarmthGetState = { type = "Function", dir = "C2S", rate = 4 },

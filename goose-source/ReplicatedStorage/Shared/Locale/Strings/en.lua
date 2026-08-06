@@ -622,4 +622,35 @@ return {
 	warmth_panel_drop = "Golden eggs land on your own base. You have %s to walk over and grab one.",
 	warmth_panel_leave = "Leave now and it holds for %s, then cools by %d per minute.",
 	warmth_panel_stat = "Golden eggs collected: %d",
+
+	-- Shows (admin)
+	show_aurora = "Aurora",
+	show_storm = "Thunderstorm",
+	show_meteor = "Meteor Shower",
+	show_sakura = "Sakura Wind",
+	show_disco = "Disco Night",
+	show_frost = "Deep Freeze",
+	show_rift = "The Rift",
+	show_goldrain = "Gold Rain",
+	show_nebula = "Nebula",
+	show_taco = "Taco Party",
+
+	admin_cmd_show = "Run Show",
+	admin_cmd_show_desc = "Starts a map-wide show. showId: Aurora, Storm, Meteor, Sakura, Disco, Frost, Rift, GoldRain, Nebula, Taco",
+	admin_cmd_show_stop = "Stop Show",
+	admin_cmd_show_stop_desc = "Stops the running show immediately and restores the lighting.",
+	admin_cmd_floor_two = "Toggle 2nd Floor",
+	admin_cmd_floor_two_desc = "Opens or closes that player's second floor, ignoring the index requirement.",
+	admin_param_show = "Show ID",
+	admin_param_seconds = "Length (sec, 0 = default)",
+	admin_param_unlocked = "Open",
+
+	-- Second floor
+	floor_guide_title = "2nd Floor Unlocked",
+	floor_guide_body = "Head up this way",
+	floor_welcome_title = "Welcome to the 2nd Floor!",
+	floor_welcome_body = "You gained %d more slots, for %d in total.",
+	floor_unlocked_toast = "Your index opened the 2nd floor! +%d slots",
+	index_quest_title = "Collect %d index entries -> unlock floor 2",
+	index_quest_done = "DONE!",
 }

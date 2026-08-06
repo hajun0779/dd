@@ -1,0 +1,751 @@
+[
+  {
+    "rbxl_path": "ReplicatedStorage/Shared/Config/AdminConfig",
+    "class": "ModuleScript",
+    "disabled": null,
+    "lua_file": "ReplicatedStorage/Shared/Config/AdminConfig.lua",
+    "source_length": 8127
+  },
+  {
+    "rbxl_path": "ReplicatedStorage/Shared/Config/BallEventConfig",
+    "class": "ModuleScript",
+    "disabled": null,
+    "lua_file": "ReplicatedStorage/Shared/Config/BallEventConfig.lua",
+    "source_length": 2803
+  },
+  {
+    "rbxl_path": "ReplicatedStorage/Shared/Config/DialogueConfig",
+    "class": "ModuleScript",
+    "disabled": null,
+    "lua_file": "ReplicatedStorage/Shared/Config/DialogueConfig.lua",
+    "source_length": 2399
+  },
+  {
+    "rbxl_path": "ReplicatedStorage/Shared/Config/EggConfig",
+    "class": "ModuleScript",
+    "disabled": null,
+    "lua_file": "ReplicatedStorage/Shared/Config/EggConfig.lua",
+    "source_length": 19015
+  },
+  {
+    "rbxl_path": "ReplicatedStorage/Shared/Config/FloorConfig",
+    "class": "ModuleScript",
+    "disabled": null,
+    "lua_file": "ReplicatedStorage/Shared/Config/FloorConfig.lua",
+    "source_length": 1061
+  },
+  {
+    "rbxl_path": "ReplicatedStorage/Shared/Config/FusionConfig",
+    "class": "ModuleScript",
+    "disabled": null,
+    "lua_file": "ReplicatedStorage/Shared/Config/FusionConfig.lua",
+    "source_length": 1902
+  },
+  {
+    "rbxl_path": "ReplicatedStorage/Shared/Config/GameConfig",
+    "class": "ModuleScript",
+    "disabled": null,
+    "lua_file": "ReplicatedStorage/Shared/Config/GameConfig.lua",
+    "source_length": 3241
+  },
+  {
+    "rbxl_path": "ReplicatedStorage/Shared/Config/GooseConfig",
+    "class": "ModuleScript",
+    "disabled": null,
+    "lua_file": "ReplicatedStorage/Shared/Config/GooseConfig.lua",
+    "source_length": 25346
+  },
+  {
+    "rbxl_path": "ReplicatedStorage/Shared/Config/GooseVfxConfig",
+    "class": "ModuleScript",
+    "disabled": null,
+    "lua_file": "ReplicatedStorage/Shared/Config/GooseVfxConfig.lua",
+    "source_length": 15031
+  },
+  {
+    "rbxl_path": "ReplicatedStorage/Shared/Config/GrowthConfig",
+    "class": "ModuleScript",
+    "disabled": null,
+    "lua_file": "ReplicatedStorage/Shared/Config/GrowthConfig.lua",
+    "source_length": 2519
+  },
+  {
+    "rbxl_path": "ReplicatedStorage/Shared/Config/MonetizationConfig",
+    "class": "ModuleScript",
+    "disabled": null,
+    "lua_file": "ReplicatedStorage/Shared/Config/MonetizationConfig.lua",
+    "source_length": 4638
+  },
+  {
+    "rbxl_path": "ReplicatedStorage/Shared/Config/RarityConfig",
+    "class": "ModuleScript",
+    "disabled": null,
+    "lua_file": "ReplicatedStorage/Shared/Config/RarityConfig.lua",
+    "source_length": 1920
+  },
+  {
+    "rbxl_path": "ReplicatedStorage/Shared/Config/RouletteConfig",
+    "class": "ModuleScript",
+    "disabled": null,
+    "lua_file": "ReplicatedStorage/Shared/Config/RouletteConfig.lua",
+    "source_length": 1689
+  },
+  {
+    "rbxl_path": "ReplicatedStorage/Shared/Config/ShowConfig",
+    "class": "ModuleScript",
+    "disabled": null,
+    "lua_file": "ReplicatedStorage/Shared/Config/ShowConfig.lua",
+    "source_length": 12879
+  },
+  {
+    "rbxl_path": "ReplicatedStorage/Shared/Config/StockConfig",
+    "class": "ModuleScript",
+    "disabled": null,
+    "lua_file": "ReplicatedStorage/Shared/Config/StockConfig.lua",
+    "source_length": 1302
+  },
+  {
+    "rbxl_path": "ReplicatedStorage/Shared/Config/TutorialConfig",
+    "class": "ModuleScript",
+    "disabled": null,
+    "lua_file": "ReplicatedStorage/Shared/Config/TutorialConfig.lua",
+    "source_length": 686
+  },
+  {
+    "rbxl_path": "ReplicatedStorage/Shared/Config/VariantConfig",
+    "class": "ModuleScript",
+    "disabled": null,
+    "lua_file": "ReplicatedStorage/Shared/Config/VariantConfig.lua",
+    "source_length": 1916
+  },
+  {
+    "rbxl_path": "ReplicatedStorage/Shared/Config/WarmthConfig",
+    "class": "ModuleScript",
+    "disabled": null,
+    "lua_file": "ReplicatedStorage/Shared/Config/WarmthConfig.lua",
+    "source_length": 4839
+  },
+  {
+    "rbxl_path": "ReplicatedStorage/Shared/Config/WorldConfig",
+    "class": "ModuleScript",
+    "disabled": null,
+    "lua_file": "ReplicatedStorage/Shared/Config/WorldConfig.lua",
+    "source_length": 2797
+  },
+  {
+    "rbxl_path": "ReplicatedStorage/Shared/Locale/Localization",
+    "class": "ModuleScript",
+    "disabled": null,
+    "lua_file": "ReplicatedStorage/Shared/Locale/Localization.lua",
+    "source_length": 5882
+  },
+  {
+    "rbxl_path": "ReplicatedStorage/Shared/Locale/Strings/en",
+    "class": "ModuleScript",
+    "disabled": null,
+    "lua_file": "ReplicatedStorage/Shared/Locale/Strings/en.lua",
+    "source_length": 23448
+  },
+  {
+    "rbxl_path": "ReplicatedStorage/Shared/Locale/Strings/ko",
+    "class": "ModuleScript",
+    "disabled": null,
+    "lua_file": "ReplicatedStorage/Shared/Locale/Strings/ko.lua",
+    "source_length": 19060
+  },
+  {
+    "rbxl_path": "ReplicatedStorage/Shared/Net/NetClient",
+    "class": "ModuleScript",
+    "disabled": null,
+    "lua_file": "ReplicatedStorage/Shared/Net/NetClient.lua",
+    "source_length": 1565
+  },
+  {
+    "rbxl_path": "ReplicatedStorage/Shared/Net/NetServer",
+    "class": "ModuleScript",
+    "disabled": null,
+    "lua_file": "ReplicatedStorage/Shared/Net/NetServer.lua",
+    "source_length": 8242
+  },
+  {
+    "rbxl_path": "ReplicatedStorage/Shared/Net/Remotes",
+    "class": "ModuleScript",
+    "disabled": null,
+    "lua_file": "ReplicatedStorage/Shared/Net/Remotes.lua",
+    "source_length": 6029
+  },
+  {
+    "rbxl_path": "ReplicatedStorage/Shared/UI/Atlas",
+    "class": "ModuleScript",
+    "disabled": null,
+    "lua_file": "ReplicatedStorage/Shared/UI/Atlas.lua",
+    "source_length": 3236
+  },
+  {
+    "rbxl_path": "ReplicatedStorage/Shared/UI/AtlasData",
+    "class": "ModuleScript",
+    "disabled": null,
+    "lua_file": "ReplicatedStorage/Shared/UI/AtlasData.lua",
+    "source_length": 6282
+  },
+  {
+    "rbxl_path": "ReplicatedStorage/Shared/UI/EggVisual",
+    "class": "ModuleScript",
+    "disabled": null,
+    "lua_file": "ReplicatedStorage/Shared/UI/EggVisual.lua",
+    "source_length": 3220
+  },
+  {
+    "rbxl_path": "ReplicatedStorage/Shared/UI/ParticleAssets",
+    "class": "ModuleScript",
+    "disabled": null,
+    "lua_file": "ReplicatedStorage/Shared/UI/ParticleAssets.lua",
+    "source_length": 1165
+  },
+  {
+    "rbxl_path": "ReplicatedStorage/Shared/UI/Theme",
+    "class": "ModuleScript",
+    "disabled": null,
+    "lua_file": "ReplicatedStorage/Shared/UI/Theme.lua",
+    "source_length": 4979
+  },
+  {
+    "rbxl_path": "ReplicatedStorage/Shared/UI/UIBuilder",
+    "class": "ModuleScript",
+    "disabled": null,
+    "lua_file": "ReplicatedStorage/Shared/UI/UIBuilder.lua",
+    "source_length": 25204
+  },
+  {
+    "rbxl_path": "ReplicatedStorage/Shared/Util/Format",
+    "class": "ModuleScript",
+    "disabled": null,
+    "lua_file": "ReplicatedStorage/Shared/Util/Format.lua",
+    "source_length": 2384
+  },
+  {
+    "rbxl_path": "ReplicatedStorage/Shared/Util/GooseStats",
+    "class": "ModuleScript",
+    "disabled": null,
+    "lua_file": "ReplicatedStorage/Shared/Util/GooseStats.lua",
+    "source_length": 3054
+  },
+  {
+    "rbxl_path": "ReplicatedStorage/Shared/Util/ModelFactory",
+    "class": "ModuleScript",
+    "disabled": null,
+    "lua_file": "ReplicatedStorage/Shared/Util/ModelFactory.lua",
+    "source_length": 25857
+  },
+  {
+    "rbxl_path": "ReplicatedStorage/Shared/Util/Rng",
+    "class": "ModuleScript",
+    "disabled": null,
+    "lua_file": "ReplicatedStorage/Shared/Util/Rng.lua",
+    "source_length": 1181
+  },
+  {
+    "rbxl_path": "ReplicatedStorage/Shared/Util/Signal",
+    "class": "ModuleScript",
+    "disabled": null,
+    "lua_file": "ReplicatedStorage/Shared/Util/Signal.lua",
+    "source_length": 1161
+  },
+  {
+    "rbxl_path": "ReplicatedStorage/Shared/Util/Trove",
+    "class": "ModuleScript",
+    "disabled": null,
+    "lua_file": "ReplicatedStorage/Shared/Util/Trove.lua",
+    "source_length": 1217
+  },
+  {
+    "rbxl_path": "ServerScriptService/FloorBootstrap",
+    "class": "Script",
+    "disabled": false,
+    "lua_file": "ServerScriptService/FloorBootstrap.lua",
+    "source_length": 569
+  },
+  {
+    "rbxl_path": "ServerScriptService/RouletteBootstrap",
+    "class": "Script",
+    "disabled": false,
+    "lua_file": "ServerScriptService/RouletteBootstrap.lua",
+    "source_length": 581
+  },
+  {
+    "rbxl_path": "ServerScriptService/Server",
+    "class": "Script",
+    "disabled": false,
+    "lua_file": "ServerScriptService/Server.lua",
+    "source_length": 3356
+  },
+  {
+    "rbxl_path": "ServerScriptService/Server/Config/ServerConfig",
+    "class": "ModuleScript",
+    "disabled": null,
+    "lua_file": "ServerScriptService/Server/Config/ServerConfig.lua",
+    "source_length": 1811
+  },
+  {
+    "rbxl_path": "ServerScriptService/Server/Services/AdminService",
+    "class": "ModuleScript",
+    "disabled": null,
+    "lua_file": "ServerScriptService/Server/Services/AdminService.lua",
+    "source_length": 22083
+  },
+  {
+    "rbxl_path": "ServerScriptService/Server/Services/AntiCheatService",
+    "class": "ModuleScript",
+    "disabled": null,
+    "lua_file": "ServerScriptService/Server/Services/AntiCheatService.lua",
+    "source_length": 11359
+  },
+  {
+    "rbxl_path": "ServerScriptService/Server/Services/BallEventService",
+    "class": "ModuleScript",
+    "disabled": null,
+    "lua_file": "ServerScriptService/Server/Services/BallEventService.lua",
+    "source_length": 23826
+  },
+  {
+    "rbxl_path": "ServerScriptService/Server/Services/BanService",
+    "class": "ModuleScript",
+    "disabled": null,
+    "lua_file": "ServerScriptService/Server/Services/BanService.lua",
+    "source_length": 4711
+  },
+  {
+    "rbxl_path": "ServerScriptService/Server/Services/BaseService",
+    "class": "ModuleScript",
+    "disabled": null,
+    "lua_file": "ServerScriptService/Server/Services/BaseService.lua",
+    "source_length": 26525
+  },
+  {
+    "rbxl_path": "ServerScriptService/Server/Services/CombatService",
+    "class": "ModuleScript",
+    "disabled": null,
+    "lua_file": "ServerScriptService/Server/Services/CombatService.lua",
+    "source_length": 4073
+  },
+  {
+    "rbxl_path": "ServerScriptService/Server/Services/DataService",
+    "class": "ModuleScript",
+    "disabled": null,
+    "lua_file": "ServerScriptService/Server/Services/DataService.lua",
+    "source_length": 12600
+  },
+  {
+    "rbxl_path": "ServerScriptService/Server/Services/EggService",
+    "class": "ModuleScript",
+    "disabled": null,
+    "lua_file": "ServerScriptService/Server/Services/EggService.lua",
+    "source_length": 12561
+  },
+  {
+    "rbxl_path": "ServerScriptService/Server/Services/FloorService",
+    "class": "ModuleScript",
+    "disabled": null,
+    "lua_file": "ServerScriptService/Server/Services/FloorService.lua",
+    "source_length": 8643
+  },
+  {
+    "rbxl_path": "ServerScriptService/Server/Services/FusionService",
+    "class": "ModuleScript",
+    "disabled": null,
+    "lua_file": "ServerScriptService/Server/Services/FusionService.lua",
+    "source_length": 5673
+  },
+  {
+    "rbxl_path": "ServerScriptService/Server/Services/GiftService",
+    "class": "ModuleScript",
+    "disabled": null,
+    "lua_file": "ServerScriptService/Server/Services/GiftService.lua",
+    "source_length": 6442
+  },
+  {
+    "rbxl_path": "ServerScriptService/Server/Services/GrowthService",
+    "class": "ModuleScript",
+    "disabled": null,
+    "lua_file": "ServerScriptService/Server/Services/GrowthService.lua",
+    "source_length": 5338
+  },
+  {
+    "rbxl_path": "ServerScriptService/Server/Services/HatchService",
+    "class": "ModuleScript",
+    "disabled": null,
+    "lua_file": "ServerScriptService/Server/Services/HatchService.lua",
+    "source_length": 8844
+  },
+  {
+    "rbxl_path": "ServerScriptService/Server/Services/IncomeService",
+    "class": "ModuleScript",
+    "disabled": null,
+    "lua_file": "ServerScriptService/Server/Services/IncomeService.lua",
+    "source_length": 15760
+  },
+  {
+    "rbxl_path": "ServerScriptService/Server/Services/IndexService",
+    "class": "ModuleScript",
+    "disabled": null,
+    "lua_file": "ServerScriptService/Server/Services/IndexService.lua",
+    "source_length": 3360
+  },
+  {
+    "rbxl_path": "ServerScriptService/Server/Services/InventoryService",
+    "class": "ModuleScript",
+    "disabled": null,
+    "lua_file": "ServerScriptService/Server/Services/InventoryService.lua",
+    "source_length": 5278
+  },
+  {
+    "rbxl_path": "ServerScriptService/Server/Services/MonetizationService",
+    "class": "ModuleScript",
+    "disabled": null,
+    "lua_file": "ServerScriptService/Server/Services/MonetizationService.lua",
+    "source_length": 13084
+  },
+  {
+    "rbxl_path": "ServerScriptService/Server/Services/NoclipGuard",
+    "class": "ModuleScript",
+    "disabled": null,
+    "lua_file": "ServerScriptService/Server/Services/NoclipGuard.lua",
+    "source_length": 4624
+  },
+  {
+    "rbxl_path": "ServerScriptService/Server/Services/PromptService",
+    "class": "ModuleScript",
+    "disabled": null,
+    "lua_file": "ServerScriptService/Server/Services/PromptService.lua",
+    "source_length": 3817
+  },
+  {
+    "rbxl_path": "ServerScriptService/Server/Services/RagdollService",
+    "class": "ModuleScript",
+    "disabled": null,
+    "lua_file": "ServerScriptService/Server/Services/RagdollService.lua",
+    "source_length": 6639
+  },
+  {
+    "rbxl_path": "ServerScriptService/Server/Services/RebirthService",
+    "class": "ModuleScript",
+    "disabled": null,
+    "lua_file": "ServerScriptService/Server/Services/RebirthService.lua",
+    "source_length": 4421
+  },
+  {
+    "rbxl_path": "ServerScriptService/Server/Services/RouletteService",
+    "class": "ModuleScript",
+    "disabled": null,
+    "lua_file": "ServerScriptService/Server/Services/RouletteService.lua",
+    "source_length": 7619
+  },
+  {
+    "rbxl_path": "ServerScriptService/Server/Services/SellService",
+    "class": "ModuleScript",
+    "disabled": null,
+    "lua_file": "ServerScriptService/Server/Services/SellService.lua",
+    "source_length": 4330
+  },
+  {
+    "rbxl_path": "ServerScriptService/Server/Services/SettingsService",
+    "class": "ModuleScript",
+    "disabled": null,
+    "lua_file": "ServerScriptService/Server/Services/SettingsService.lua",
+    "source_length": 2317
+  },
+  {
+    "rbxl_path": "ServerScriptService/Server/Services/ShopService",
+    "class": "ModuleScript",
+    "disabled": null,
+    "lua_file": "ServerScriptService/Server/Services/ShopService.lua",
+    "source_length": 13721
+  },
+  {
+    "rbxl_path": "ServerScriptService/Server/Services/ShowService",
+    "class": "ModuleScript",
+    "disabled": null,
+    "lua_file": "ServerScriptService/Server/Services/ShowService.lua",
+    "source_length": 19211
+  },
+  {
+    "rbxl_path": "ServerScriptService/Server/Services/StealService",
+    "class": "ModuleScript",
+    "disabled": null,
+    "lua_file": "ServerScriptService/Server/Services/StealService.lua",
+    "source_length": 19429
+  },
+  {
+    "rbxl_path": "ServerScriptService/Server/Services/StockService",
+    "class": "ModuleScript",
+    "disabled": null,
+    "lua_file": "ServerScriptService/Server/Services/StockService.lua",
+    "source_length": 3745
+  },
+  {
+    "rbxl_path": "ServerScriptService/Server/Services/TutorialService",
+    "class": "ModuleScript",
+    "disabled": null,
+    "lua_file": "ServerScriptService/Server/Services/TutorialService.lua",
+    "source_length": 5852
+  },
+  {
+    "rbxl_path": "ServerScriptService/Server/Services/WarmthService",
+    "class": "ModuleScript",
+    "disabled": null,
+    "lua_file": "ServerScriptService/Server/Services/WarmthService.lua",
+    "source_length": 17816
+  },
+  {
+    "rbxl_path": "ServerScriptService/Server/Services/WorldService",
+    "class": "ModuleScript",
+    "disabled": null,
+    "lua_file": "ServerScriptService/Server/Services/WorldService.lua",
+    "source_length": 6719
+  },
+  {
+    "rbxl_path": "ServerScriptService/ShowBootstrap",
+    "class": "Script",
+    "disabled": false,
+    "lua_file": "ServerScriptService/ShowBootstrap.lua",
+    "source_length": 565
+  },
+  {
+    "rbxl_path": "ServerScriptService/TutorialBootstrap",
+    "class": "Script",
+    "disabled": false,
+    "lua_file": "ServerScriptService/TutorialBootstrap.lua",
+    "source_length": 540
+  },
+  {
+    "rbxl_path": "ServerScriptService/WarmthBootstrap",
+    "class": "Script",
+    "disabled": false,
+    "lua_file": "ServerScriptService/WarmthBootstrap.lua",
+    "source_length": 579
+  },
+  {
+    "rbxl_path": "ServerStorage/Tools/Bat/Swing",
+    "class": "Script",
+    "disabled": false,
+    "lua_file": "ServerStorage/Tools/Bat/Swing.lua",
+    "source_length": 3234
+  },
+  {
+    "rbxl_path": "StarterPack/Baseball/Swing",
+    "class": "Script",
+    "disabled": false,
+    "lua_file": "StarterPack/Baseball/Swing.lua",
+    "source_length": 3230
+  },
+  {
+    "rbxl_path": "StarterPlayer/StarterPlayerScripts/Client",
+    "class": "LocalScript",
+    "disabled": false,
+    "lua_file": "StarterPlayer/StarterPlayerScripts/Client.lua",
+    "source_length": 7099
+  },
+  {
+    "rbxl_path": "StarterPlayer/StarterPlayerScripts/Client/ClientState",
+    "class": "ModuleScript",
+    "disabled": null,
+    "lua_file": "StarterPlayer/StarterPlayerScripts/Client/ClientState.lua",
+    "source_length": 2078
+  },
+  {
+    "rbxl_path": "StarterPlayer/StarterPlayerScripts/Client/Controllers/AdminController",
+    "class": "ModuleScript",
+    "disabled": null,
+    "lua_file": "StarterPlayer/StarterPlayerScripts/Client/Controllers/AdminController.lua",
+    "source_length": 30499
+  },
+  {
+    "rbxl_path": "StarterPlayer/StarterPlayerScripts/Client/Controllers/AlertController",
+    "class": "ModuleScript",
+    "disabled": null,
+    "lua_file": "StarterPlayer/StarterPlayerScripts/Client/Controllers/AlertController.lua",
+    "source_length": 5380
+  },
+  {
+    "rbxl_path": "StarterPlayer/StarterPlayerScripts/Client/Controllers/BillboardScaler",
+    "class": "ModuleScript",
+    "disabled": null,
+    "lua_file": "StarterPlayer/StarterPlayerScripts/Client/Controllers/BillboardScaler.lua",
+    "source_length": 1681
+  },
+  {
+    "rbxl_path": "StarterPlayer/StarterPlayerScripts/Client/Controllers/DialogController",
+    "class": "ModuleScript",
+    "disabled": null,
+    "lua_file": "StarterPlayer/StarterPlayerScripts/Client/Controllers/DialogController.lua",
+    "source_length": 7688
+  },
+  {
+    "rbxl_path": "StarterPlayer/StarterPlayerScripts/Client/Controllers/DialogueController",
+    "class": "ModuleScript",
+    "disabled": null,
+    "lua_file": "StarterPlayer/StarterPlayerScripts/Client/Controllers/DialogueController.lua",
+    "source_length": 11162
+  },
+  {
+    "rbxl_path": "StarterPlayer/StarterPlayerScripts/Client/Controllers/EggAnimator",
+    "class": "ModuleScript",
+    "disabled": null,
+    "lua_file": "StarterPlayer/StarterPlayerScripts/Client/Controllers/EggAnimator.lua",
+    "source_length": 15384
+  },
+  {
+    "rbxl_path": "StarterPlayer/StarterPlayerScripts/Client/Controllers/EventFxController",
+    "class": "ModuleScript",
+    "disabled": null,
+    "lua_file": "StarterPlayer/StarterPlayerScripts/Client/Controllers/EventFxController.lua",
+    "source_length": 9270
+  },
+  {
+    "rbxl_path": "StarterPlayer/StarterPlayerScripts/Client/Controllers/FusionController",
+    "class": "ModuleScript",
+    "disabled": null,
+    "lua_file": "StarterPlayer/StarterPlayerScripts/Client/Controllers/FusionController.lua",
+    "source_length": 6245
+  },
+  {
+    "rbxl_path": "StarterPlayer/StarterPlayerScripts/Client/Controllers/GiftController",
+    "class": "ModuleScript",
+    "disabled": null,
+    "lua_file": "StarterPlayer/StarterPlayerScripts/Client/Controllers/GiftController.lua",
+    "source_length": 11241
+  },
+  {
+    "rbxl_path": "StarterPlayer/StarterPlayerScripts/Client/Controllers/GooseVfxController",
+    "class": "ModuleScript",
+    "disabled": null,
+    "lua_file": "StarterPlayer/StarterPlayerScripts/Client/Controllers/GooseVfxController.lua",
+    "source_length": 30718
+  },
+  {
+    "rbxl_path": "StarterPlayer/StarterPlayerScripts/Client/Controllers/HatchController",
+    "class": "ModuleScript",
+    "disabled": null,
+    "lua_file": "StarterPlayer/StarterPlayerScripts/Client/Controllers/HatchController.lua",
+    "source_length": 12845
+  },
+  {
+    "rbxl_path": "StarterPlayer/StarterPlayerScripts/Client/Controllers/HudController",
+    "class": "ModuleScript",
+    "disabled": null,
+    "lua_file": "StarterPlayer/StarterPlayerScripts/Client/Controllers/HudController.lua",
+    "source_length": 7163
+  },
+  {
+    "rbxl_path": "StarterPlayer/StarterPlayerScripts/Client/Controllers/IndexController",
+    "class": "ModuleScript",
+    "disabled": null,
+    "lua_file": "StarterPlayer/StarterPlayerScripts/Client/Controllers/IndexController.lua",
+    "source_length": 13503
+  },
+  {
+    "rbxl_path": "StarterPlayer/StarterPlayerScripts/Client/Controllers/InventoryController",
+    "class": "ModuleScript",
+    "disabled": null,
+    "lua_file": "StarterPlayer/StarterPlayerScripts/Client/Controllers/InventoryController.lua",
+    "source_length": 16184
+  },
+  {
+    "rbxl_path": "StarterPlayer/StarterPlayerScripts/Client/Controllers/MusicController",
+    "class": "ModuleScript",
+    "disabled": null,
+    "lua_file": "StarterPlayer/StarterPlayerScripts/Client/Controllers/MusicController.lua",
+    "source_length": 3407
+  },
+  {
+    "rbxl_path": "StarterPlayer/StarterPlayerScripts/Client/Controllers/NotifyController",
+    "class": "ModuleScript",
+    "disabled": null,
+    "lua_file": "StarterPlayer/StarterPlayerScripts/Client/Controllers/NotifyController.lua",
+    "source_length": 6705
+  },
+  {
+    "rbxl_path": "StarterPlayer/StarterPlayerScripts/Client/Controllers/PromptController",
+    "class": "ModuleScript",
+    "disabled": null,
+    "lua_file": "StarterPlayer/StarterPlayerScripts/Client/Controllers/PromptController.lua",
+    "source_length": 15672
+  },
+  {
+    "rbxl_path": "StarterPlayer/StarterPlayerScripts/Client/Controllers/SettingsController",
+    "class": "ModuleScript",
+    "disabled": null,
+    "lua_file": "StarterPlayer/StarterPlayerScripts/Client/Controllers/SettingsController.lua",
+    "source_length": 7043
+  },
+  {
+    "rbxl_path": "StarterPlayer/StarterPlayerScripts/Client/Controllers/ShopController",
+    "class": "ModuleScript",
+    "disabled": null,
+    "lua_file": "StarterPlayer/StarterPlayerScripts/Client/Controllers/ShopController.lua",
+    "source_length": 19942
+  },
+  {
+    "rbxl_path": "StarterPlayer/StarterPlayerScripts/Client/Controllers/SignController",
+    "class": "ModuleScript",
+    "disabled": null,
+    "lua_file": "StarterPlayer/StarterPlayerScripts/Client/Controllers/SignController.lua",
+    "source_length": 5699
+  },
+  {
+    "rbxl_path": "StarterPlayer/StarterPlayerScripts/Client/Controllers/WorldController",
+    "class": "ModuleScript",
+    "disabled": null,
+    "lua_file": "StarterPlayer/StarterPlayerScripts/Client/Controllers/WorldController.lua",
+    "source_length": 5059
+  },
+  {
+    "rbxl_path": "StarterPlayer/StarterPlayerScripts/EggWheelClient",
+    "class": "LocalScript",
+    "disabled": false,
+    "lua_file": "StarterPlayer/StarterPlayerScripts/EggWheelClient.lua",
+    "source_length": 32235
+  },
+  {
+    "rbxl_path": "StarterPlayer/StarterPlayerScripts/FloorClient",
+    "class": "LocalScript",
+    "disabled": false,
+    "lua_file": "StarterPlayer/StarterPlayerScripts/FloorClient.lua",
+    "source_length": 8978
+  },
+  {
+    "rbxl_path": "StarterPlayer/StarterPlayerScripts/ShowClient",
+    "class": "LocalScript",
+    "disabled": false,
+    "lua_file": "StarterPlayer/StarterPlayerScripts/ShowClient.lua",
+    "source_length": 23196
+  },
+  {
+    "rbxl_path": "StarterPlayer/StarterPlayerScripts/TutorialClient",
+    "class": "LocalScript",
+    "disabled": false,
+    "lua_file": "StarterPlayer/StarterPlayerScripts/TutorialClient.lua",
+    "source_length": 19629
+  },
+  {
+    "rbxl_path": "StarterPlayer/StarterPlayerScripts/WarmthClient",
+    "class": "LocalScript",
+    "disabled": false,
+    "lua_file": "StarterPlayer/StarterPlayerScripts/WarmthClient.lua",
+    "source_length": 19906
+  },
+  {
+    "rbxl_path": "Workspace/NPCs/SellNpc/Script",
+    "class": "Script",
+    "disabled": false,
+    "lua_file": "Workspace/NPCs/SellNpc/Script.lua",
+    "source_length": 2904
+  },
+  {
+    "rbxl_path": "Workspace/NPCs/ShopNpc/Script",
+    "class": "Script",
+    "disabled": false,
+    "lua_file": "Workspace/NPCs/ShopNpc/Script.lua",
+    "source_length": 4059
+  }
+]

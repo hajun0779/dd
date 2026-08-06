@@ -95,7 +95,7 @@
     "class": "ModuleScript",
     "disabled": null,
     "lua_file": "ReplicatedStorage/Shared/Config/ShowConfig.lua",
-    "source_length": 12879
+    "source_length": 15802
   },
   {
     "rbxl_path": "ReplicatedStorage/Shared/Config/StockConfig",
@@ -466,7 +466,7 @@
     "class": "ModuleScript",
     "disabled": null,
     "lua_file": "ServerScriptService/Server/Services/ShowService.lua",
-    "source_length": 19505
+    "source_length": 20700
   },
   {
     "rbxl_path": "ServerScriptService/Server/Services/StealService",
@@ -718,7 +718,7 @@
     "class": "LocalScript",
     "disabled": false,
     "lua_file": "StarterPlayer/StarterPlayerScripts/ShowClient.lua",
-    "source_length": 23196
+    "source_length": 15802
   },
   {
     "rbxl_path": "StarterPlayer/StarterPlayerScripts/TutorialClient",

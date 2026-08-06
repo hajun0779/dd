@@ -139,47 +139,97 @@ local function decorate(instance: Instance, parent: Instance)
 end
 
 --[[
-	하늘을 덮는 한 장짜리 방출판.
+	하늘에 걸린 오로라 커튼.
 
-	비·눈·꽃잎·금화가 전부 이걸 쓴다. 입자 하나하나를 파트로 만들면
-	사람 수만큼 복제가 늘어나는데, 이 방식은 파트 하나면 끝난다.
-	차이는 크기·속도·색·수명뿐이고, 그 네 값이 결과를 완전히 다르게 만든다.
+	Beam 을 쓴다. 부착점 두 개를 하늘에 멀찍이 떨어뜨려 놓고 그 사이를 잇는데,
+	폭을 아주 크게 주면 가로로 길고 세로로 높은 천 한 장이 된다.
+	CurveSize 로 휘게 하면 곧은 판이 아니라 흐르는 천처럼 보인다.
+
+	파티클로는 이 그림이 안 나온다. 파티클은 알갱이라서 아무리 겹쳐도
+	"뿌옇다" 가 되지 커튼이 되지 않는다.
 ]]
-local function spawnFalling(folder: Folder, center: Vector3, spec, texture: string, lifetime: number)
-	local sheet = Instance.new("Part")
-	sheet.Name = "FallSheet"
-	sheet.Size = Vector3.new(760, 4, 760)
-	sheet.Position = center + Vector3.new(0, 240, 0)
-	sheet.Anchored = true
-	sheet.CanCollide = false
-	sheet.CanQuery = false
-	sheet.CanTouch = false
-	sheet.CastShadow = false
-	sheet.Transparency = 1
-	decorate(sheet, folder)
+local function spawnAurora(folder: Folder, center: Vector3, spec)
+	local curtains = math.clamp(math.floor(tonumber(spec.Curtains) or 5), 1, 12)
+	local radius = tonumber(spec.Radius) or 420
+	local height = tonumber(spec.Height) or 320
+	local width = tonumber(spec.Width) or 190
+	local length = tonumber(spec.Length) or 620
+	local palette = spec.Colors or { Color3.fromRGB(120, 255, 200) }
 
-	local emitter = Instance.new("ParticleEmitter")
-	emitter.Texture = ParticleAssets.get(texture)
-	emitter.Color = ColorSequence.new(spec.Color or Color3.new(1, 1, 1))
-	emitter.LightEmission = 0.4
-	emitter.LightInfluence = 0.25
-	emitter.Size = NumberSequence.new(tonumber(spec.Size) or 3)
-	emitter.Transparency = NumberSequence.new({
-		NumberSequenceKeypoint.new(0, 1),
-		NumberSequenceKeypoint.new(0.08, 0.1),
-		NumberSequenceKeypoint.new(0.9, 0.15),
-		NumberSequenceKeypoint.new(1, 1),
-	})
-	emitter.Rate = math.clamp(tonumber(spec.Rate) or 100, 1, 500)
-	emitter.Lifetime = NumberRange.new(lifetime * 0.8, lifetime * 1.2)
-	emitter.Speed = NumberRange.new((tonumber(spec.Speed) or 20) * 0.85, (tonumber(spec.Speed) or 20) * 1.15)
-	emitter.SpreadAngle = Vector2.new(14, 14)
-	emitter.Rotation = NumberRange.new(0, 360)
-	emitter.RotSpeed = NumberRange.new(-90, 90)
-	emitter.EmissionDirection = Enum.NormalId.Bottom
-	emitter.Acceleration = Vector3.new(rng:NextNumber(-6, 6), -12, rng:NextNumber(-6, 6))
-	emitter.Parent = sheet
-	return sheet
+	for i = 1, curtains do
+		local angle = (i - 1) / curtains * math.pi * 2 + rng:NextNumber(-0.25, 0.25)
+		local distance = radius * rng:NextNumber(0.6, 1.15)
+		local spot = center + Vector3.new(
+			math.cos(angle) * distance,
+			height + rng:NextNumber(-60, 60),
+			math.sin(angle) * distance
+		)
+
+		local anchor = Instance.new("Part")
+		anchor.Name = "AuroraAnchor"
+		anchor.Size = Vector3.new(1, 1, 1)
+		anchor.CFrame = CFrame.new(spot) * CFrame.Angles(0, angle + math.pi / 2, 0)
+		anchor.Anchored = true
+		anchor.CanCollide = false
+		anchor.CanQuery = false
+		anchor.CanTouch = false
+		anchor.CastShadow = false
+		anchor.Transparency = 1
+		decorate(anchor, folder)
+
+		local from = Instance.new("Attachment")
+		from.Position = Vector3.new(-length / 2, 0, 0)
+		from.Parent = anchor
+
+		local to = Instance.new("Attachment")
+		to.Position = Vector3.new(length / 2, 0, 0)
+		to.Parent = anchor
+
+		local head = palette[(i - 1) % #palette + 1]
+		local tail = palette[i % #palette + 1]
+
+		local beam = Instance.new("Beam")
+		beam.Attachment0 = from
+		beam.Attachment1 = to
+		beam.Width0 = width * rng:NextNumber(0.7, 1.2)
+		beam.Width1 = width * rng:NextNumber(0.7, 1.2)
+		beam.Color = ColorSequence.new(head, tail)
+		beam.LightEmission = 1
+		beam.LightInfluence = 0
+		beam.Texture = ParticleAssets.get("Glow")
+		beam.TextureMode = Enum.TextureMode.Stretch
+		beam.TextureLength = 1
+		beam.TextureSpeed = rng:NextNumber(0.05, 0.16)
+		beam.Segments = 24
+		beam.FaceCamera = true
+		-- 양 끝이 스르르 사라져야 천 조각이 아니라 흐르는 빛으로 보인다
+		beam.Transparency = NumberSequence.new({
+			NumberSequenceKeypoint.new(0, 1),
+			NumberSequenceKeypoint.new(0.25, 0.72),
+			NumberSequenceKeypoint.new(0.7, 0.78),
+			NumberSequenceKeypoint.new(1, 1),
+		})
+		beam.CurveSize0 = rng:NextNumber(-160, 160)
+		beam.CurveSize1 = rng:NextNumber(-160, 160)
+		beam.Parent = anchor
+
+		--[[
+			아주 느리게 물결친다.
+
+			커브 크기를 왔다갔다 시키면 천이 바람에 흔들리는 것처럼 보인다.
+			위치를 움직이면 하늘이 통째로 도는 것처럼 보여서 어지럽다.
+		]]
+		local wave = TweenService:Create(
+			beam,
+			TweenInfo.new(rng:NextNumber(9, 16), Enum.EasingStyle.Sine, Enum.EasingDirection.InOut, -1, true),
+			{
+				CurveSize0 = -beam.CurveSize0,
+				CurveSize1 = -beam.CurveSize1,
+				Width0 = beam.Width0 * 0.7,
+			}
+		)
+		wave:Play()
+	end
 end
 
 --[[
@@ -500,13 +550,15 @@ local function dropMeteor(folder: Folder, center: Vector3, spec, generation: num
 	fall:Play()
 end
 
+--[[
+	서버는 "가서 볼 수 있는 것" 만 놓는다.
+
+	비·눈·꽃잎·금화처럼 내 주변에 흩날리는 것은 각자 클라이언트가 만든다.
+	서버가 맵 전체에 뿌리면 멀리 있는 사람에게는 안 보이고,
+	가까이 있는 사람에게도 늘 같은 자리에서만 떨어진다.
+]]
 local WORLD_BUILDERS = {
-	rain = function(folder, center, spec)
-		spawnFalling(folder, center, spec, "Shard", 2.2)
-	end,
-	fall = function(folder, center, spec)
-		spawnFalling(folder, center, spec, "Glow", 7)
-	end,
+	aurora = spawnAurora,
 	orbit = spawnOrbit,
 	cracks = spawnCracks,
 	spotlights = spawnSpotlights,

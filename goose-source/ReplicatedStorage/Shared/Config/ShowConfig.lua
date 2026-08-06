@@ -6,29 +6,27 @@
 	관리자가 직접 켜는 맵 전체 이벤트다. 타코 파티처럼 정해진 시간에 도는 게
 	아니라, 원할 때 골라서 튼다.
 
-	기존 이벤트 연출이 전부 비슷해 보였던 이유는 건드리는 곳이 하나였기 때문이다.
-	전부 "하늘 색 바꾸고 화면 번쩍" 이었다.
+	전부 3D 다. 화면에 그림을 덧대지 않는다.
 
-	그래서 연출 하나를 다섯 축으로 쪼갰고, 열 가지가 서로 다른 축을 주력으로 쓴다.
+	처음에는 꽃잎·금화·번개를 화면 위에 사각형으로 그렸는데, 그러면 월드에서
+	일어나는 일이 아니라 화면에 씌운 필터로 보인다. 원근도 없고 건물 뒤로
+	가려지지도 않아서, 고개를 돌려도 똑같은 게 똑같은 자리에 붙어 있다.
 
-	  Sky     하늘·안개·밝기            느리고 넓게 바뀌는 것
-	  Grade   블룸·대비·채도·틴트       화면의 "재질" 을 바꾸는 것
-	  Camera  흔들림·펀치·기울기        몸으로 느끼는 것
-	  Screen  화면에 그리는 것          비·번개·꽃잎·금화처럼 눈앞을 지나가는 것
-	  World   맵에 실제로 놓는 것       운석·균열·스포트라이트처럼 가서 볼 수 있는 것
+	그래서 두 가지로만 만든다.
 
-	  오로라   Sky 주력, 카메라 안 흔듦, 조용함
-	  폭풍우   Screen 주력(비+번개), Sky 어둡게, 불규칙한 섬광
-	  유성우   World 주력(진짜 떨어짐), 착탄마다 흔들림
-	  벚꽃     Screen 주력, 카메라 정지, 채도만 올림
-	  디스코   Grade 주력(색이 계속 순환), World 스포트라이트
-	  혹한     Sky+Screen(성에), 화면 가장자리가 얼어붙음
-	  균열     World 주력(바닥이 갈라짐), 카메라 계속 진동
-	  황금비   Screen 주력(금화), 틴트만 노랗게
-	  성운     Sky 주력(밤하늘), 별이 회전
-	  타코     Grade 주력 + 노래, 색종이
+	  Local   내 카메라를 따라다니는 3D 방출기.
+	          비·눈·꽃잎·금화·불티가 여기서 나온다. 이 화면에만 있고 복제되지 않는다.
+	          카메라 밑에 두므로 서버는 아무것도 모른다.
 
-	숫자는 전부 여기에만 있다. ShowService 와 ShowClient 는 이 표를 읽기만 한다.
+	  World   서버가 맵에 놓는 3D 물체.
+	          운석·균열·조명·오로라 커튼처럼 "가서 볼 수 있는" 것.
+	          모두가 같은 것을 본다.
+
+	나머지 세 축은 3D 장면 자체를 바꾸는 것이라 그대로 둔다.
+
+	  Sky     하늘·안개·밝기
+	  Grade   블룸·대비·채도 (렌더된 3D 화면을 보정하는 것이지 덧그리는 게 아니다)
+	  Camera  흔들림·기울기
 ]]
 local ShowConfig = {}
 
@@ -64,8 +62,29 @@ ShowConfig.BaseGrade = {
 ShowConfig.DefaultSeconds = 75
 ShowConfig.FadeSeconds = 2.5
 
---- 한 서버에서 동시에 도는 연출은 하나뿐이다
-ShowConfig.MaxConcurrent = 1
+--[[
+	내 주변 3D 방출기의 기본값.
+
+	Kind    fall 위에서 떨어짐 / rise 아래에서 솟음 / swirl 주변을 떠다님
+	Spread  방출판 한 변의 길이(스터드). 넓을수록 시야를 채우지만 밀도가 준다.
+	Height  카메라에서 위/아래로 얼마나 떨어뜨릴지
+]]
+ShowConfig.LocalDefaults = {
+	Kind = "fall",
+	Texture = "Glow",
+	Rate = 80,
+	Size = 2,
+	Speed = 30,
+	Lifetime = 4,
+	Spread = 90,
+	Height = 40,
+	Drag = 0,
+	Spin = 60,
+	SpreadAngle = 12,
+	LightEmission = 0.4,
+	Transparency = 0.15,
+	Squash = 0,
+}
 
 ShowConfig.List = {
 	--------------------------------------------------------------------
@@ -96,19 +115,41 @@ ShowConfig.List = {
 			Tint = Color3.fromRGB(206, 236, 255),
 		},
 		Camera = { Shake = 0, Punch = 0, Sway = 0.35 },
-		Screen = {
-			Kind = "curtain",
+
+		--- 발밑에서 천천히 솟아오르는 빛가루
+		Local = {
+			Kind = "rise",
+			Texture = "Glow",
 			Colors = {
 				Color3.fromRGB(96, 255, 196),
 				Color3.fromRGB(120, 176, 255),
 				Color3.fromRGB(196, 128, 255),
 			},
-			Bands = 7,
-			Speed = 0.12,
-			Height = 0.62,
-			Alpha = 0.72,
+			Rate = 34,
+			Size = 3.2,
+			Speed = 9,
+			Lifetime = 7,
+			Spread = 110,
+			Height = -14,
+			Drag = 1.4,
+			SpreadAngle = 26,
+			LightEmission = 1,
+			Transparency = 0.5,
 		},
-		World = { Kind = "orbit", Count = 6, Color = Color3.fromRGB(120, 255, 210), Radius = 260, Height = 170 },
+		--- 하늘 높이 걸린 진짜 3D 오로라 커튼
+		World = {
+			Kind = "aurora",
+			Curtains = 5,
+			Colors = {
+				Color3.fromRGB(96, 255, 196),
+				Color3.fromRGB(120, 176, 255),
+				Color3.fromRGB(196, 128, 255),
+			},
+			Radius = 420,
+			Height = 320,
+			Width = 190,
+			Length = 620,
+		},
 	},
 
 	--------------------------------------------------------------------
@@ -139,15 +180,43 @@ ShowConfig.List = {
 			Tint = Color3.fromRGB(198, 214, 240),
 		},
 		Camera = { Shake = 0.22, ShakeSeconds = 0.7, Punch = 0, Sway = 0 },
-		Screen = {
-			Kind = "lightning",
-			Color = Color3.fromRGB(226, 238, 255),
-			-- 번개 사이 간격. 규칙적이면 금방 지겨워진다.
-			MinGap = 1.4,
-			MaxGap = 5.2,
-			Forks = 4,
+
+		--- 빗줄기. 길쭉하게 눌러야 방울이 아니라 줄기로 보인다.
+		Local = {
+			Kind = "fall",
+			Texture = "Shard",
+			Colors = { Color3.fromRGB(180, 200, 230) },
+			Rate = 340,
+			Size = 1.6,
+			Speed = 110,
+			Lifetime = 1.4,
+			Spread = 70,
+			Height = 55,
+			SpreadAngle = 5,
+			Squash = 2.4,
+			LightEmission = 0.2,
+			Transparency = 0.35,
+			Spin = 0,
+
+			--[[
+				3D 번개.
+
+				하늘에 실제 파트로 갈래를 세우고, 그 끝에 빛을 달아
+				주변 지형이 실제로 밝아지게 한다. 화면을 하얗게 덮는 것과는 다르다.
+			]]
+			Lightning = {
+				MinGap = 1.6,
+				MaxGap = 5.4,
+				Forks = 6,
+				Distance = 240,
+				Height = 340,
+				Thickness = 3.4,
+				Color = Color3.fromRGB(226, 238, 255),
+				Brightness = 8,
+				FlashSeconds = 0.28,
+			},
 		},
-		World = { Kind = "rain", Rate = 260, Color = Color3.fromRGB(180, 200, 230), Speed = 190 },
+		World = { Kind = "none" },
 	},
 
 	--------------------------------------------------------------------
@@ -178,11 +247,24 @@ ShowConfig.List = {
 			Tint = Color3.fromRGB(255, 210, 176),
 		},
 		Camera = { Shake = 0, Punch = 0, Sway = 0 },
-		Screen = {
-			Kind = "streaks",
-			Color = Color3.fromRGB(255, 208, 140),
-			Rate = 2.2,
-			Angle = 28,
+
+		--- 멀리 하늘을 비스듬히 긋고 지나가는 잔별
+		Local = {
+			Kind = "fall",
+			Texture = "Spark",
+			Colors = { Color3.fromRGB(255, 208, 140), Color3.fromRGB(255, 246, 210) },
+			Rate = 26,
+			Size = 2.4,
+			Speed = 140,
+			Lifetime = 2.2,
+			Spread = 220,
+			Height = 150,
+			SpreadAngle = 8,
+			Squash = 3.2,
+			LightEmission = 1,
+			Transparency = 0.1,
+			Spin = 0,
+			Tilt = 34,
 		},
 		--[[
 			이건 화면 그림이 아니라 진짜 파트가 떨어진다.
@@ -229,17 +311,35 @@ ShowConfig.List = {
 		},
 		-- 조용한 연출이다. 카메라를 흔들면 분위기가 통째로 깨진다.
 		Camera = { Shake = 0, Punch = 0, Sway = 0.2 },
-		Screen = {
-			Kind = "petals",
+
+		--[[
+			꽃잎.
+
+			Drag 를 크게 잡는 게 핵심이다. 저항이 없으면 그냥 떨어지는 점이 되고,
+			저항이 있어야 공중에서 머뭇거리며 흩날린다.
+		]]
+		Local = {
+			Kind = "fall",
+			Texture = "Glow",
 			Colors = {
 				Color3.fromRGB(255, 196, 216),
 				Color3.fromRGB(255, 222, 236),
 				Color3.fromRGB(246, 168, 200),
 			},
-			Rate = 9,
-			Drift = 130,
+			Rate = 90,
+			Size = 1.5,
+			Speed = 12,
+			Lifetime = 9,
+			Spread = 100,
+			Height = 45,
+			Drag = 2.2,
+			SpreadAngle = 45,
+			Spin = 180,
+			LightEmission = 0.3,
+			Transparency = 0.1,
+			Wind = 14,
 		},
-		World = { Kind = "fall", Rate = 90, Color = Color3.fromRGB(255, 196, 220), Size = 3.4, Speed = 14 },
+		World = { Kind = "none" },
 	},
 
 	--------------------------------------------------------------------
@@ -281,7 +381,28 @@ ShowConfig.List = {
 			CycleSeconds = 1.1,
 		},
 		Camera = { Shake = 0.06, ShakeSeconds = 0.4, Punch = 0, Sway = 0.5 },
-		Screen = { Kind = "disco", Rays = 10, Speed = 0.5, Alpha = 0.86 },
+
+		--- 바닥에서 떠오르는 색 빛알
+		Local = {
+			Kind = "rise",
+			Texture = "Spark",
+			Colors = {
+				Color3.fromRGB(255, 96, 170),
+				Color3.fromRGB(110, 170, 255),
+				Color3.fromRGB(120, 255, 180),
+				Color3.fromRGB(255, 226, 110),
+			},
+			Rate = 60,
+			Size = 1.4,
+			Speed = 16,
+			Lifetime = 4.5,
+			Spread = 70,
+			Height = -10,
+			Drag = 0.8,
+			SpreadAngle = 34,
+			LightEmission = 1,
+			Transparency = 0.1,
+		},
 		World = { Kind = "spotlights", Count = 8, Radius = 190, Height = 90, Speed = 0.35 },
 	},
 
@@ -301,8 +422,9 @@ ShowConfig.List = {
 			Ambient = Color3.fromRGB(58, 74, 88),
 			OutdoorAmbient = Color3.fromRGB(92, 116, 136),
 			FogColor = Color3.fromRGB(198, 220, 238),
-			FogStart = 40,
-			FogEnd = 420,
+			--- 눈보라는 안개가 짙어야 눈이 실제로 시야를 가리는 느낌이 난다
+			FogStart = 30,
+			FogEnd = 320,
 		},
 		Grade = {
 			Bloom = 0.4,
@@ -313,18 +435,26 @@ ShowConfig.List = {
 			Tint = Color3.fromRGB(196, 226, 255),
 		},
 		Camera = { Shake = 0.04, ShakeSeconds = 1.4, Punch = 0, Sway = 0.15 },
-		--[[
-			화면 가장자리부터 안쪽으로 성에가 자란다.
-			가운데를 막지 않아야 플레이가 가능하다.
-		]]
-		Screen = {
-			Kind = "frost",
-			Color = Color3.fromRGB(214, 240, 255),
-			Crystals = 26,
-			GrowSeconds = 14,
-			MaxAlpha = 0.55,
+
+		--- 옆에서 들이치는 눈보라
+		Local = {
+			Kind = "fall",
+			Texture = "Glow",
+			Colors = { Color3.fromRGB(235, 246, 255), Color3.fromRGB(206, 230, 250) },
+			Rate = 260,
+			Size = 1.1,
+			Speed = 34,
+			Lifetime = 3.4,
+			Spread = 80,
+			Height = 40,
+			Drag = 0.6,
+			SpreadAngle = 30,
+			Spin = 90,
+			LightEmission = 0.6,
+			Transparency = 0.2,
+			Wind = 42,
 		},
-		World = { Kind = "fall", Rate = 220, Color = Color3.fromRGB(235, 246, 255), Size = 2.2, Speed = 26 },
+		World = { Kind = "none" },
 	},
 
 	--------------------------------------------------------------------
@@ -356,11 +486,23 @@ ShowConfig.List = {
 		},
 		-- 끊기지 않고 계속 낮게 우는 진동. 이 연출의 정체성이다.
 		Camera = { Shake = 0.12, ShakeSeconds = 999, Punch = 0, Sway = 0 },
-		Screen = {
-			Kind = "pulse",
-			Color = Color3.fromRGB(255, 92, 48),
-			Period = 1.6,
-			MaxAlpha = 0.42,
+
+		--- 발밑에서 솟는 불티
+		Local = {
+			Kind = "rise",
+			Texture = "Ember",
+			Colors = { Color3.fromRGB(255, 108, 40), Color3.fromRGB(255, 196, 110) },
+			Rate = 110,
+			Size = 1.6,
+			Speed = 22,
+			Lifetime = 5,
+			Spread = 90,
+			Height = -12,
+			Drag = 1.1,
+			SpreadAngle = 30,
+			LightEmission = 1,
+			Transparency = 0.1,
+			Spin = 120,
 		},
 		World = {
 			Kind = "cracks",
@@ -401,13 +543,25 @@ ShowConfig.List = {
 			Tint = Color3.fromRGB(255, 234, 168),
 		},
 		Camera = { Shake = 0, Punch = 0.06, Sway = 0 },
-		Screen = {
-			Kind = "coins",
-			Color = Color3.fromRGB(255, 212, 84),
-			Rate = 14,
-			Spin = 220,
+
+		--- 빙글빙글 돌며 떨어지는 금화
+		Local = {
+			Kind = "fall",
+			Texture = "Ring",
+			Colors = { Color3.fromRGB(255, 212, 84), Color3.fromRGB(255, 246, 190) },
+			Rate = 130,
+			Size = 1.8,
+			Speed = 44,
+			Lifetime = 3.2,
+			Spread = 85,
+			Height = 45,
+			Drag = 0.4,
+			SpreadAngle = 16,
+			Spin = 420,
+			LightEmission = 0.9,
+			Transparency = 0.05,
 		},
-		World = { Kind = "fall", Rate = 140, Color = Color3.fromRGB(255, 214, 90), Size = 2.8, Speed = 44 },
+		World = { Kind = "none" },
 	},
 
 	--------------------------------------------------------------------
@@ -438,15 +592,26 @@ ShowConfig.List = {
 			Tint = Color3.fromRGB(206, 190, 255),
 		},
 		Camera = { Shake = 0, Punch = 0, Sway = 0.6 },
-		Screen = {
-			Kind = "stars",
+
+		--- 주변을 아주 느리게 떠다니는 별가루
+		Local = {
+			Kind = "swirl",
+			Texture = "Spark",
 			Colors = {
 				Color3.fromRGB(255, 255, 255),
 				Color3.fromRGB(186, 196, 255),
 				Color3.fromRGB(255, 190, 226),
 			},
-			Count = 130,
-			Speed = 0.045,
+			Rate = 70,
+			Size = 0.9,
+			Speed = 3,
+			Lifetime = 12,
+			Spread = 120,
+			Height = 6,
+			Drag = 0.4,
+			SpreadAngle = 180,
+			LightEmission = 1,
+			Transparency = 0.15,
 		},
 		World = { Kind = "orbit", Count = 10, Color = Color3.fromRGB(178, 150, 255), Radius = 300, Height = 220 },
 	},
@@ -486,15 +651,29 @@ ShowConfig.List = {
 			CycleSeconds = 2.4,
 		},
 		Camera = { Shake = 0.05, ShakeSeconds = 0.5, Punch = 0, Sway = 0.4 },
-		Screen = {
-			Kind = "confetti",
+
+		--- 쏟아지는 색종이
+		Local = {
+			Kind = "fall",
+			Texture = "Shard",
 			Colors = {
 				Color3.fromRGB(255, 176, 70),
 				Color3.fromRGB(255, 106, 96),
 				Color3.fromRGB(120, 224, 140),
 				Color3.fromRGB(120, 180, 255),
 			},
-			Rate = 22,
+			Rate = 200,
+			Size = 1.3,
+			Speed = 26,
+			Lifetime = 5,
+			Spread = 90,
+			Height = 42,
+			Drag = 1.6,
+			SpreadAngle = 40,
+			Spin = 540,
+			LightEmission = 0.2,
+			Transparency = 0.05,
+			Wind = 18,
 		},
 		World = { Kind = "spotlights", Count = 5, Radius = 150, Height = 70, Speed = 0.22 },
 	},
@@ -529,6 +708,22 @@ function ShowConfig.seconds(show, override: number?): number
 		return math.clamp(requested, 5, 900)
 	end
 	return math.clamp(tonumber(show and show.Seconds) or ShowConfig.DefaultSeconds, 5, 900)
+end
+
+--- 비어 있는 값은 기본값으로 메운다
+function ShowConfig.localSpec(show)
+	local spec = show and show.Local
+	if type(spec) ~= "table" then
+		return nil
+	end
+	local out = {}
+	for key, value in pairs(ShowConfig.LocalDefaults) do
+		out[key] = value
+	end
+	for key, value in pairs(spec) do
+		out[key] = value
+	end
+	return out
 end
 
 return ShowConfig

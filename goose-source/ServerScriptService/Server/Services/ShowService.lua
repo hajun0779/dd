@@ -82,11 +82,23 @@ end
 -- 조명
 --------------------------------------------------------------------------------
 
+--[[
+	설정에 오타가 나도 서버가 죽으면 안 된다.
+
+	Lighting 에 없는 이름으로 접근하면 그 줄에서 에러가 난다.
+	연출 설정 한 줄 때문에 조명이 통째로 멈추는 건 너무 비싸다.
+	읽어 보고 되는 것만 넘긴다.
+]]
 local function tweenLighting(target, seconds: number)
 	local filtered = {}
 	for key, value in pairs(target) do
-		if Lighting[key] ~= nil then
+		local ok, current = pcall(function()
+			return Lighting[key]
+		end)
+		if ok and current ~= nil then
 			filtered[key] = value
+		elseif not ok then
+			warn(("[ShowService] Lighting 에 없는 속성입니다: %s"):format(tostring(key)))
 		end
 	end
 	TweenService:Create(Lighting, TweenInfo.new(math.max(seconds, 0.1)), filtered):Play()

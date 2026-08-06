@@ -230,8 +230,14 @@ function WorldService.start()
 		이벤트가 조명을 저장했다 되돌릴 때도 이 값으로 돌아온다.
 	]]
 	for key, value in pairs(ShowConfig.BaseLighting) do
-		if Lighting[key] ~= nil then
-			Lighting[key] = value
+		-- 없는 속성 이름이면 그 줄에서 에러가 난다. 조명 설정 하나로 서버가 멈추면 안 된다.
+		local ok = pcall(function()
+			if Lighting[key] ~= nil then
+				Lighting[key] = value
+			end
+		end)
+		if not ok then
+			warn(("[WorldService] Lighting 에 없는 속성입니다: %s"):format(tostring(key)))
 		end
 	end
 

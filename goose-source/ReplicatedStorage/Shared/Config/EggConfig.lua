@@ -601,6 +601,15 @@ for _, definition in ipairs(EXPANSION_EGGS) do
 		Price = definition.Price,
 		Currency = "Cash",
 		Icon = "icon_egg",
+		--[[
+			기호와 무늬도 같이 옮긴다.
+
+			이 표는 필드를 하나하나 적어서 옮기기 때문에, 위에 적어 둬도
+			여기에 안 적으면 그냥 사라진다. 확장 알 열 종이 화면에서
+			전부 무늬 없는 알로 보이던 이유가 이거였다.
+		]]
+		Glyph = definition.Glyph,
+		Pattern = definition.Pattern,
 		IsNew = true,
 		HatchTimeHint = definition.HatchTimeHint,
 		RarityWeights = definition.Weights,

@@ -85,24 +85,64 @@ Theme.CjkLocales = {
 	th = true,
 }
 
-Theme.FontFallback = {
-	[Enum.Font.FredokaOne] = Enum.Font.GothamBlack,
-	[Enum.Font.LuckiestGuy] = Enum.Font.GothamBlack,
-	[Enum.Font.Bangers] = Enum.Font.GothamBlack,
-	[Enum.Font.Creepster] = Enum.Font.GothamBlack,
-	[Enum.Font.Arcade] = Enum.Font.GothamBlack,
-	[Enum.Font.Cartoon] = Enum.Font.GothamBold,
-	[Enum.Font.Fantasy] = Enum.Font.GothamBold,
-	[Enum.Font.SciFi] = Enum.Font.GothamBold,
-	[Enum.Font.Michroma] = Enum.Font.GothamBold,
-	[Enum.Font.Sarpanch] = Enum.Font.GothamBold,
-	[Enum.Font.Antique] = Enum.Font.Gotham,
-	[Enum.Font.Bodoni] = Enum.Font.Gotham,
-	[Enum.Font.Garamond] = Enum.Font.Gotham,
-	[Enum.Font.Highway] = Enum.Font.Gotham,
-	[Enum.Font.American] = Enum.Font.Gotham,
-	[Enum.Font.Nunito] = Enum.Font.Gotham,
+--[[
+	표는 이름으로 적고, 실제 폰트는 찾아서 채운다.
+
+	Enum.Font 의 구성은 로블록스 버전마다 다르다. 없는 이름을 그대로 쓰면
+	`Enum.Font.XXX` 한 줄에서 이 모듈이 통째로 로드에 실패하고,
+	Theme 를 require 하는 화면이 전부 같이 죽는다. 글씨 하나 바꾸자고
+	게임을 못 켜게 만들 수는 없다.
+
+	그래서 지금 이 클라이언트에 실제로 있는 폰트만 표에 넣는다.
+	없는 이름은 조용히 건너뛴다.
+]]
+local FONT_BY_NAME = {}
+for _, item in ipairs(Enum.Font:GetEnumItems()) do
+	FONT_BY_NAME[item.Name] = item
+end
+
+--- { 바꿀 폰트, 대신 쓸 폰트 }
+local FALLBACK_NAMES = {
+	{ "FredokaOne", "GothamBlack" },
+	{ "LuckiestGuy", "GothamBlack" },
+	{ "Bangers", "GothamBlack" },
+	{ "Creepster", "GothamBlack" },
+	{ "Arcade", "GothamBlack" },
+	{ "PermanentMarker", "GothamBlack" },
+	{ "Cartoon", "GothamBold" },
+	{ "Fantasy", "GothamBold" },
+	{ "SciFi", "GothamBold" },
+	{ "Michroma", "GothamBold" },
+	{ "Sarpanch", "GothamBold" },
+	{ "AmaticSC", "GothamBold" },
+	{ "IndieFlower", "GothamBold" },
+	{ "PatrickHand", "GothamBold" },
+	{ "Antique", "Gotham" },
+	{ "Bodoni", "Gotham" },
+	{ "Garamond", "Gotham" },
+	{ "Highway", "Gotham" },
+	{ "Nunito", "Gotham" },
+	{ "Oswald", "Gotham" },
+	{ "Merriweather", "Gotham" },
+	{ "JosefinSans", "Gotham" },
+	{ "TitilliumWeb", "Gotham" },
+	{ "SpecialElite", "Gotham" },
+	{ "Jura", "Gotham" },
+	{ "Kalam", "Gotham" },
+	{ "Fondamento", "Gotham" },
+	{ "DenkOne", "GothamBold" },
+	{ "GrenzeGotisch", "GothamBold" },
+	{ "Code", "RobotoMono" },
 }
+
+Theme.FontFallback = {}
+for _, pair in ipairs(FALLBACK_NAMES) do
+	local from = FONT_BY_NAME[pair[1]]
+	local to = FONT_BY_NAME[pair[2]] or FONT_BY_NAME.GothamBold or Enum.Font.SourceSansBold
+	if from then
+		Theme.FontFallback[from] = to
+	end
+end
 
 function Theme.resolveFont(font: Enum.Font?, localeCode: string?): Enum.Font
 	if not font then

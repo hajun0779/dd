@@ -1,0 +1,129 @@
+--- ggd-orig/ReplicatedStorage/Shared/Net/Remotes.lua	2026-08-06 03:19:44.565459365 +0000
++++ ggd/ReplicatedStorage/Shared/Net/Remotes.lua	2026-08-06 03:26:46.146127276 +0000
+@@ -82,6 +82,9 @@
+ 	RouletteGetState = { type = "Function", dir = "C2S", rate = 4 },
+ 	RouletteSpin = { type = "Function", dir = "C2S", rate = 2 },
+ 	RouletteSync = { type = "Event", dir = "S2C" },
++	WarmthSync = { type = "Event", dir = "S2C" },
++	WarmthDrop = { type = "Event", dir = "S2C" },
++	WarmthGetState = { type = "Function", dir = "C2S", rate = 4 },
+ 	TutorialGetState = { type = "Function", dir = "C2S", rate = 4 },
+ 	TutorialSkip = { type = "Function", dir = "C2S", rate = 2 },
+ 	TutorialSync = { type = "Event", dir = "S2C" },
+--- ggd-orig/ReplicatedStorage/Shared/Locale/Strings/ko.lua	2026-08-06 03:19:44.563072788 +0000
++++ ggd/ReplicatedStorage/Shared/Locale/Strings/ko.lua	2026-08-06 03:27:20.978125986 +0000
+@@ -590,4 +590,36 @@
+ 	tutorial_feed_body = "내 거위 가까이 가서 화면의 먹이주기 안내를 사용하세요.",
+ 	tutorial_done_title = "튜토리얼 완료!",
+ 	tutorial_done_body = "이제 거위를 키우고 돈을 모아 더 좋은 알에 도전해 보세요!",
++
++	-- 둥지 온기
++	warmth_title = "둥지 온기",
++	warmth_tier_cold = "차가운 둥지",
++	warmth_tier_ember = "불씨",
++	warmth_tier_warm = "따뜻한 둥지",
++	warmth_tier_hot = "후끈한 둥지",
++	warmth_tier_blaze = "황금 둥지",
++	warmth_tier_row = "온기 %d · 수입 x%s",
++	warmth_current = "현재",
++	warmth_tier_up = "둥지가 %s이(가) 되었습니다! 수입 x%s",
++	warmth_idle = "자리 비움 · 온기 정지",
++
++	warmth_egg_next = "다음 황금알 %s",
++	warmth_egg_waiting = "황금알 도착! %s 남음",
++	warmth_egg_incoming = "%d초 뒤 둥지에 황금알이 떨어집니다!",
++	warmth_egg_landed = "황금알이 둥지에 떨어졌습니다! 가서 주우세요",
++	warmth_egg_claimed = "황금알에서 %s 획득!",
++	warmth_egg_bonus_egg = "덤으로 %s 획득!",
++	warmth_egg_bonus_spin = "덤으로 룰렛 기회 1회 획득!",
++	warmth_egg_bonus_full = "가방이 가득 차 %s 대신 현금을 더 받았습니다.",
++	warmth_egg_expired = "황금알이 사라졌습니다.",
++	warmth_announce = "%s 님의 둥지에 황금알이 떨어졌습니다!",
++
++	warmth_welcome_kept = "둥지가 아직 따뜻합니다 — %s (수입 x%s)",
++	warmth_welcome_cooled = "둥지가 식었습니다. 수입 x%s부터 다시 데워 보세요.",
++	warmth_welcome_cold = "둥지가 완전히 식었습니다. 다시 데워 볼까요?",
++
++	warmth_panel_hint = "접속해 있는 동안 둥지가 데워집니다. 단계가 오를수록 거위가 버는 돈이 늘어납니다.",
++	warmth_panel_drop = "황금알은 내 기지 위로 떨어집니다. %s 안에 직접 가서 주워야 합니다.",
++	warmth_panel_leave = "지금 나가도 %s 동안은 그대로지만, 그 뒤로는 분당 %d씩 식습니다.",
++	warmth_panel_stat = "지금까지 주운 황금알 %d개",
+ }
+--- ggd-orig/ReplicatedStorage/Shared/Locale/Strings/en.lua	2026-08-06 03:19:44.562314171 +0000
++++ ggd/ReplicatedStorage/Shared/Locale/Strings/en.lua	2026-08-06 03:27:32.230125569 +0000
+@@ -590,4 +590,36 @@
+ 	tutorial_feed_body = "Walk up to your goose and use the Feed prompt shown on screen.",
+ 	tutorial_done_title = "Tutorial Complete!",
+ 	tutorial_done_body = "Raise your geese, collect money, and work toward better eggs!",
++
++	-- Nest warmth
++	warmth_title = "Nest Warmth",
++	warmth_tier_cold = "Cold Nest",
++	warmth_tier_ember = "Ember",
++	warmth_tier_warm = "Warm Nest",
++	warmth_tier_hot = "Toasty Nest",
++	warmth_tier_blaze = "Golden Nest",
++	warmth_tier_row = "Warmth %d · Income x%s",
++	warmth_current = "NOW",
++	warmth_tier_up = "Your nest is now a %s! Income x%s",
++	warmth_idle = "Away · warmth paused",
++
++	warmth_egg_next = "Next golden egg %s",
++	warmth_egg_waiting = "Golden egg landed! %s left",
++	warmth_egg_incoming = "A golden egg lands on your nest in %d seconds!",
++	warmth_egg_landed = "A golden egg landed on your nest! Go grab it",
++	warmth_egg_claimed = "The golden egg gave you %s!",
++	warmth_egg_bonus_egg = "Bonus: %s!",
++	warmth_egg_bonus_spin = "Bonus: 1 wheel spin!",
++	warmth_egg_bonus_full = "Your bag was full, so you got extra cash instead of %s.",
++	warmth_egg_expired = "The golden egg disappeared.",
++	warmth_announce = "A golden egg landed on %s's nest!",
++
++	warmth_welcome_kept = "Your nest is still warm — %s (income x%s)",
++	warmth_welcome_cooled = "Your nest cooled down. Warming back up from income x%s.",
++	warmth_welcome_cold = "Your nest went cold. Shall we warm it up again?",
++
++	warmth_panel_hint = "Your nest warms up while you play. Higher tiers make your geese earn more.",
++	warmth_panel_drop = "Golden eggs land on your own base. You have %s to walk over and grab one.",
++	warmth_panel_leave = "Leave now and it holds for %s, then cools by %d per minute.",
++	warmth_panel_stat = "Golden eggs collected: %d",
+ }
+--- ggd-orig/ServerScriptService/Server/Services/IncomeService.lua	2026-08-06 03:19:44.580871854 +0000
++++ ggd/ServerScriptService/Server/Services/IncomeService.lua	2026-08-06 03:26:55.234126939 +0000
+@@ -17,6 +17,25 @@
+ 
+ local IncomeService = {}
+ 
++--[[
++	둥지 온기는 나중에 붙인 부가 기능이다.
++
++	넣지 않은 place 에서도 수입 계산이 그대로 돌아야 하므로
++	모듈이 있을 때만 가져오고, 없으면 배율 1로 둔다.
++]]
++local WarmthService = nil
++do
++	local module = script.Parent:FindFirstChild("WarmthService")
++	if module then
++		local ok, result = pcall(require, module)
++		if ok then
++			WarmthService = result
++		else
++			warn("[IncomeService] WarmthService 로드 실패: " .. tostring(result))
++		end
++	end
++end
++
+ local CFG = GameConfig.Income
+ local B = GameConfig.Base
+ 
+@@ -45,8 +64,10 @@
+ 	local cashMultiplier = tonumber(data.cashMultiplier) or 1
+ 	local rebirths = tonumber(data.rebirths) or 0
+ 	local rebirthBonus = 1 + rebirths * GameConfig.Rebirth.IncomePerRebirth
++	local warmthBonus = WarmthService and WarmthService.multiplier(player) or 1
+ 	return cashMultiplier
+ 		* rebirthBonus
++		* warmthBonus
+ 		* WorldService.multiplier("Income")
+ 		* BallEventService.multiplier(player)
+ end

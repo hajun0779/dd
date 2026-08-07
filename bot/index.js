@@ -9,8 +9,7 @@ import {
   SlashCommandBuilder,
 } from 'discord.js';
 
-import { config, validateConfig } from './config.js';
-import { store } from './store.js';
+import { config, getSharedCategoryTypes, validateConfig } from './config.js';
 import { log } from './log.js';
 import { editPayload, errorPanel, neutralPanel, payload, successPanel } from './components.js';
 
@@ -27,7 +26,7 @@ import {
 const COMMANDS = [
   new SlashCommandBuilder()
     .setName('티켓패널')
-    .setDescription('문의 티켓 패널을 다시 게시합니다.')
+    .setDescription('문의 패널을 다시 게시합니다.')
     .setDefaultMemberPermissions(PermissionsBitField.Flags.ManageGuild)
     .setContexts(InteractionContextType.Guild),
 ].map((command) => command.toJSON());
@@ -63,7 +62,14 @@ client.once(Events.ClientReady, async () => {
 
   await registerCommands();
 
-  // 봇이 실행될 때마다 티켓 패널을 자동으로 게시합니다.
+  for (const type of getSharedCategoryTypes()) {
+    log.warn(
+      `${type.label} 카테고리 ID 를 아직 넣지 않아 통합 문의 카테고리를 같이 씁니다. ` +
+        `.env 의 TICKET_CATEGORY_${type.value.toUpperCase()} 에 카테고리 ID 를 넣어 주세요.`,
+    );
+  }
+
+  // 봇이 실행될 때마다 문의 패널을 자동으로 게시합니다.
   await deployTicketPanel(client);
 
   log.info('봇 준비가 끝났습니다.');
@@ -72,14 +78,6 @@ client.once(Events.ClientReady, async () => {
 client.on(Events.GuildCreate, async (guild) => {
   log.info(`새 서버에 참여했습니다: ${guild.name} (${guild.id})`);
   await registerCommands();
-});
-
-// 티켓 채널이 사람에 의해 직접 삭제되면 저장소에서도 지웁니다.
-client.on(Events.ChannelDelete, (channel) => {
-  if (store.getTicket(channel.id)) {
-    store.removeTicket(channel.id);
-    log.info(`삭제된 티켓 채널을 저장소에서 정리했습니다: ${channel.id}`);
-  }
 });
 
 // --- 상호작용 처리 ---
@@ -113,13 +111,13 @@ client.on(Events.InteractionCreate, async (interaction) => {
 async function handleCommand(interaction) {
   switch (interaction.commandName) {
     case '티켓패널': {
-      await replyWorking(interaction, '티켓 패널을 다시 게시하고 있습니다.');
+      await replyWorking(interaction, '문의 패널을 다시 게시하고 있습니다.');
       const sent = await deployTicketPanel(client);
       await interaction.editReply(
         editPayload(
           sent
-            ? successPanel('완료', `티켓 패널을 <#${config.ticketPanelChannelId}> 채널에 다시 게시했습니다.`)
-            : errorPanel('실패', '티켓 패널을 게시하지 못했습니다. 채널 ID와 봇 권한을 확인해 주세요.'),
+            ? successPanel('완료', `문의 패널을 <#${config.ticketPanelChannelId}> 채널에 다시 게시했습니다.`)
+            : errorPanel('실패', '문의 패널을 게시하지 못했습니다. 채널 ID와 봇 권한을 확인해 주세요.'),
         ),
       );
       return;
@@ -189,7 +187,6 @@ process.on('unhandledRejection', (reason) => {
 async function shutdown(signal) {
   log.info(`${signal} 신호를 받아 종료합니다.`);
   try {
-    await store.save();
     await client.destroy();
   } catch (error) {
     log.error('종료 처리 중 오류', error?.message ?? error);
@@ -208,7 +205,6 @@ async function main() {
     process.exit(1);
   }
 
-  await store.load();
   await client.login(config.token);
 }
 

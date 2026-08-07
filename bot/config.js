@@ -82,13 +82,19 @@ export const config = {
   ticketPanelChannelId: str('TICKET_PANEL_CHANNEL_ID', '1535140042652254219'),
   ticketStaffRoleId: str('TICKET_STAFF_ROLE_ID', '1535140290581635162'),
   ticketTranscriptChannelId: str('TICKET_TRANSCRIPT_CHANNEL_ID', '1535140618626670623'),
-  ticketCategoryId: str('TICKET_CATEGORY_ID', '1535141065160658944'),
   ticketDeleteDelaySeconds: int('TICKET_DELETE_DELAY_SECONDS', 5),
   // 티켓 패널 안에 넣을 배너 이미지 주소. 비워 두면 이미지 없이 나갑니다.
   ticketPanelImageUrl: str('TICKET_PANEL_IMAGE_URL', null),
 
-  // 저장소. 실행 위치와 상관없이 이 폴더의 data/store.json 을 씁니다.
-  dataFile: str('DATA_FILE', path.join(BASE_DIR, 'data', 'store.json')),
+  // 문의 받는 시간 (한국 시간 기준). 0=일요일, 1=월요일 ... 6=토요일
+  business: {
+    startHour: int('BUSINESS_START_HOUR', 11),
+    endHour: int('BUSINESS_END_HOUR', 18),
+    days: str('BUSINESS_DAYS', '1,2,3,4,5')
+      .split(',')
+      .map((day) => Number.parseInt(day.trim(), 10))
+      .filter((day) => Number.isInteger(day) && day >= 0 && day <= 6),
+  },
 
   // 기록(HTML) 생성 제한
   transcript: {
@@ -110,24 +116,31 @@ export const config = {
   timezone: 'Asia/Seoul',
 };
 
+// 문의 종류마다 카테고리가 따로 있습니다.
+// 제품 문의와 파트너 문의 카테고리 ID 를 아직 넣지 않았다면 통합 문의 카테고리를 대신 씁니다.
+const GENERAL_CATEGORY_ID = str('TICKET_CATEGORY_GENERAL', '1535141065160658944');
+
 export const TICKET_TYPES = [
   {
     value: 'general',
-    label: '통합문의',
+    label: '통합 문의',
     prefix: '통합문의',
-    description: '서버 이용 전반에 대한 문의를 남깁니다.',
+    description: '서버 이용에 대한 문의',
+    categoryId: GENERAL_CATEGORY_ID,
   },
   {
-    value: 'bug',
-    label: '버그문의',
-    prefix: '버그문의',
-    description: '게임 또는 서버에서 발견한 오류를 제보합니다.',
+    value: 'product',
+    label: '제품 문의',
+    prefix: '제품문의',
+    description: '제품에 대한 문의',
+    categoryId: str('TICKET_CATEGORY_PRODUCT', GENERAL_CATEGORY_ID),
   },
   {
     value: 'partner',
-    label: '파트너문의',
+    label: '파트너 문의',
     prefix: '파트너문의',
-    description: '제휴 및 파트너십 관련 문의를 남깁니다.',
+    description: '제휴 문의',
+    categoryId: str('TICKET_CATEGORY_PARTNER', GENERAL_CATEGORY_ID),
   },
 ];
 
@@ -149,8 +162,11 @@ export function validateConfig() {
     TICKET_PANEL_CHANNEL_ID: config.ticketPanelChannelId,
     TICKET_STAFF_ROLE_ID: config.ticketStaffRoleId,
     TICKET_TRANSCRIPT_CHANNEL_ID: config.ticketTranscriptChannelId,
-    TICKET_CATEGORY_ID: config.ticketCategoryId,
   };
+
+  for (const type of TICKET_TYPES) {
+    requiredIds[`${type.label} 카테고리`] = type.categoryId;
+  }
 
   for (const [name, value] of Object.entries(requiredIds)) {
     if (!/^\d{17,20}$/.test(String(value ?? ''))) {
@@ -158,5 +174,20 @@ export function validateConfig() {
     }
   }
 
+  if (config.business.days.length === 0) {
+    problems.push('BUSINESS_DAYS 에 요일이 하나도 없습니다. 0(일)부터 6(토) 사이 숫자를 쉼표로 적어 주세요.');
+  }
+
+  if (config.business.startHour >= config.business.endHour) {
+    problems.push('BUSINESS_START_HOUR 는 BUSINESS_END_HOUR 보다 앞이어야 합니다.');
+  }
+
   return problems;
+}
+
+/** 아직 채우지 않아 통합 문의 카테고리를 같이 쓰고 있는 종류를 알려 줍니다. */
+export function getSharedCategoryTypes() {
+  return TICKET_TYPES.filter(
+    (type) => type.value !== 'general' && type.categoryId === GENERAL_CATEGORY_ID,
+  );
 }

@@ -1,4 +1,3 @@
-import { store } from './store.js';
 import { log } from './log.js';
 
 /**
@@ -69,7 +68,6 @@ export async function ensurePanel(client, { name, channelId, markers, payload })
 
   try {
     const sent = await channel.send(payload);
-    store.setPanel(name, { channelId, messageId: sent.id });
     log.info(`${name} 패널을 #${channel.name} 채널에 게시했습니다.`);
     return sent;
   } catch (error) {

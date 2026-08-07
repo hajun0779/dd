@@ -86,6 +86,15 @@ export const config = {
   // 티켓 패널 안에 넣을 배너 이미지 주소. 비워 두면 이미지 없이 나갑니다.
   ticketPanelImageUrl: str('TICKET_PANEL_IMAGE_URL', null),
 
+  // 후기가 올라갈 채널
+  reviewChannelId: str('REVIEW_CHANNEL_ID', null),
+
+  // 봇이 설정과 제품 파일을 보관할 채널. 스태프만 보이게 만들어 주세요.
+  storageChannelId: str('STORAGE_CHANNEL_ID', null),
+
+  // 제품을 등록하고 보낼 수 있는 역할
+  productRoleId: str('PRODUCT_APPROVAL_ROLE_ID', null),
+
   // 문의 받는 시간 (한국 시간 기준). 0=일요일, 1=월요일 ... 6=토요일
   business: {
     startHour: int('BUSINESS_START_HOUR', 11),
@@ -183,6 +192,15 @@ export function validateConfig() {
   }
 
   return problems;
+}
+
+/** 아직 채우지 않은 선택 설정을 알려 줍니다. */
+export function getMissingOptionalIds() {
+  const missing = [];
+  if (!config.reviewChannelId) missing.push(['REVIEW_CHANNEL_ID', '후기 채널']);
+  if (!config.storageChannelId) missing.push(['STORAGE_CHANNEL_ID', '설정과 제품 보관 채널']);
+  if (!config.productRoleId) missing.push(['PRODUCT_APPROVAL_ROLE_ID', '제품 담당 역할']);
+  return missing;
 }
 
 /** 아직 채우지 않아 통합 문의 카테고리를 같이 쓰고 있는 종류를 알려 줍니다. */

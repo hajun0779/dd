@@ -13,6 +13,7 @@ import { formatBusinessHours, formatKst, isBusinessHours, sleep } from './time.j
 import { editPayload, errorPanel, neutralPanel, panel, payload, warningPanel } from './components.js';
 import { ensurePanel } from './panel.js';
 import { buildTranscriptHtml, fetchAllMessages } from './transcript.js';
+import { sendReviewRequest } from './reviews.js';
 
 const FOOTER = `${config.brandName} 문의`;
 
@@ -554,6 +555,15 @@ export async function handleTicketCloseConfirm(interaction) {
         ),
       )
       .catch(() => {});
+  }
+
+  // 문의를 남긴 사람에게 후기를 요청합니다.
+  if (ticket.ownerId) {
+    await sendReviewRequest(guild.client, ticket.ownerId, {
+      kind: 'ticket',
+      ref: ticket.name,
+      subject: `${ticket.typeLabel} ${ticket.name}`,
+    });
   }
 
   const delay = Math.max(0, config.ticketDeleteDelaySeconds) * 1000;

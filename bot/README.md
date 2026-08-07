@@ -111,6 +111,46 @@ cp .env.example .env    # 그리고 DISCORD_TOKEN 을 채웁니다
 이미 샜다면 디스코드 개발자 포털에서 `Reset Token` 을 눌러 새로 발급받으면 됩니다.
 소스를 공유할 일이 있다면 `.env` 방식을 쓰는 편이 안전합니다. (`.env` 는 `.gitignore` 에 들어 있습니다.)
 
+### 프테로닥틸(Pterodactyl) 호스팅에 올릴 때
+
+파일은 `bot` 폴더째로 올리지 말고, **`bot` 폴더 안의 내용물을 `/home/container` 바로 아래**에
+올려 주세요. `package.json` 과 `index.js` 가 `/home/container/package.json`,
+`/home/container/index.js` 가 되어야 합니다.
+
+그리고 패널 **Startup** 탭에서 `MAIN_FILE` 값을 정확히 아래처럼 바꿔 주세요.
+
+```
+*.js
+```
+
+`index.js` 가 아니라 `*.js` 입니다. 오타가 아닙니다.
+
+이유는 이렇습니다. 많이 쓰이는 Node.js 에그의 시작 명령이 이렇게 되어 있습니다.
+
+```bash
+if [[ "${MAIN_FILE}" == "*.js" ]]; then node ... ; else ts-node --esm ... ; fi
+```
+
+오른쪽 `"*.js"` 에 따옴표가 붙어 있어서 패턴 비교가 아니라 **글자 그대로의 비교**가 됩니다.
+그래서 `MAIN_FILE` 이 `index.js` 면 조건이 항상 거짓이 되고, 봇이 `node` 가 아니라 `ts-node` 로
+실행됩니다. 그 `ts-node` 는 컨테이너에 typescript 가 없어서 시작하자마자 아래처럼 죽습니다.
+
+```
+TypeError: Cannot read properties of undefined (reading 'fileExists')
+    at readConfig (/usr/local/lib/node_modules/ts-node/dist/configuration.js:91:33)
+```
+
+`MAIN_FILE` 을 `*.js` 로 두면 조건이 참이 되고, 같이 들어 있는 `*.js` 파일이 `index.js` 를
+불러오는 역할을 합니다. 그래서 정상적으로 `node` 로 실행됩니다.
+
+패널에서 **시작 명령(Startup Command) 자체를 고칠 수 있다면** 그게 더 깔끔합니다.
+그때는 `MAIN_FILE` 을 `index.js` 로 두고 시작 명령을 아래처럼 바꾸면 됩니다.
+(`*.js` 파일은 그냥 두어도 아무 문제 없습니다.)
+
+```bash
+/usr/local/bin/node /home/container/index.js
+```
+
 ### 24시간 켜 두려면
 
 창을 닫으면 봇도 꺼집니다. 항상 켜 두려면 PC를 계속 켜 두거나,
@@ -190,6 +230,7 @@ bot/
   store.js            데이터 저장 (티켓 번호, 인증 정보)
   time.js             한국 시간 서식
   log.js              로그 출력
+  *.js                프테로닥틸 호스팅용 시작 파일 (일반 PC 에서는 필요 없습니다)
   package.json        설치 정보 (discord.js 하나만 씁니다)
   .env.example        .env 를 쓰고 싶을 때 참고할 예시
   README.md

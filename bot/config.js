@@ -80,6 +80,8 @@ export const config = {
   verifiedRoleId: str('VERIFIED_ROLE_ID', '1418823708247720077'),
   nicknamePrefix: str('NICKNAME_PREFIX', '예천군 시민ㅣ'),
   verifyCodeTtlMinutes: int('VERIFY_CODE_TTL_MINUTES', 30),
+  // 인증 패널 안에 넣을 배너 이미지 주소. 비워 두면 이미지 없이 나갑니다.
+  verifyPanelImageUrl: str('VERIFY_PANEL_IMAGE_URL', null),
 
   // 티켓
   ticketPanelChannelId: str('TICKET_PANEL_CHANNEL_ID', '1535140042652254219'),
@@ -87,6 +89,8 @@ export const config = {
   ticketTranscriptChannelId: str('TICKET_TRANSCRIPT_CHANNEL_ID', '1535140618626670623'),
   ticketCategoryId: str('TICKET_CATEGORY_ID', '1535141065160658944'),
   ticketDeleteDelaySeconds: int('TICKET_DELETE_DELAY_SECONDS', 5),
+  // 티켓 패널 안에 넣을 배너 이미지 주소. 비워 두면 이미지 없이 나갑니다.
+  ticketPanelImageUrl: str('TICKET_PANEL_IMAGE_URL', null),
 
   // 저장소. 실행 위치와 상관없이 이 폴더의 data/store.json 을 씁니다.
   dataFile: str('DATA_FILE', path.join(BASE_DIR, 'data', 'store.json')),

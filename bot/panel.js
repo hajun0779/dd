@@ -1,13 +1,42 @@
 import { store } from './store.js';
 import { log } from './log.js';
 
-function collectCustomIds(message) {
+/**
+ * 메시지에 들어 있는 모든 custom_id 를 모읍니다.
+ * Components V2 에서는 버튼이 컨테이너 안에 들어가므로 중첩을 따라 내려갑니다.
+ */
+export function collectCustomIds(message) {
   const ids = [];
-  for (const row of message.components ?? []) {
-    for (const component of row.components ?? []) {
-      if (component?.customId) ids.push(component.customId);
+  const seen = new WeakSet();
+
+  const visit = (node, depth) => {
+    if (!node || typeof node !== 'object' || depth > 10) return;
+    if (seen.has(node)) return;
+    seen.add(node);
+
+    if (Array.isArray(node)) {
+      for (const item of node) visit(item, depth + 1);
+      return;
     }
+
+    if (typeof node.custom_id === 'string') ids.push(node.custom_id);
+    else if (typeof node.customId === 'string') ids.push(node.customId);
+
+    for (const value of Object.values(node)) {
+      if (value && typeof value === 'object') visit(value, depth + 1);
+    }
+  };
+
+  for (const component of message.components ?? []) {
+    let node = component;
+    try {
+      if (typeof component?.toJSON === 'function') node = component.toJSON();
+    } catch {
+      node = component;
+    }
+    visit(node, 0);
   }
+
   return ids;
 }
 

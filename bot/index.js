@@ -3,7 +3,6 @@ import {
   Events,
   GatewayIntentBits,
   InteractionContextType,
-  MessageFlags,
   PermissionsBitField,
   REST,
   Routes,
@@ -13,7 +12,7 @@ import {
 import { config, validateConfig } from './config.js';
 import { store } from './store.js';
 import { log } from './log.js';
-import { errorEmbed, ephemeral, successEmbed } from './embeds.js';
+import { editPayload, errorPanel, neutralPanel, payload, successPanel } from './components.js';
 
 import {
   VERIFY_IDS,
@@ -146,33 +145,35 @@ async function handleCommand(interaction) {
       return;
 
     case '인증패널': {
-      await interaction.deferReply({ flags: MessageFlags.Ephemeral });
+      await replyWorking(interaction, '인증 패널을 다시 게시하고 있습니다.');
       const sent = await deployVerifyPanel(client);
-      await interaction.editReply({
-        embeds: [
+      await interaction.editReply(
+        editPayload(
           sent
-            ? successEmbed('완료', `인증 패널을 <#${config.verifyPanelChannelId}> 채널에 다시 게시했습니다.`)
-            : errorEmbed('실패', '인증 패널을 게시하지 못했습니다. 채널 ID와 봇 권한을 확인해 주세요.'),
-        ],
-      });
+            ? successPanel('완료', `인증 패널을 <#${config.verifyPanelChannelId}> 채널에 다시 게시했습니다.`)
+            : errorPanel('실패', '인증 패널을 게시하지 못했습니다. 채널 ID와 봇 권한을 확인해 주세요.'),
+        ),
+      );
       return;
     }
 
     case '티켓패널': {
-      await interaction.deferReply({ flags: MessageFlags.Ephemeral });
+      await replyWorking(interaction, '티켓 패널을 다시 게시하고 있습니다.');
       const sent = await deployTicketPanel(client);
-      await interaction.editReply({
-        embeds: [
+      await interaction.editReply(
+        editPayload(
           sent
-            ? successEmbed('완료', `티켓 패널을 <#${config.ticketPanelChannelId}> 채널에 다시 게시했습니다.`)
-            : errorEmbed('실패', '티켓 패널을 게시하지 못했습니다. 채널 ID와 봇 권한을 확인해 주세요.'),
-        ],
-      });
+            ? successPanel('완료', `티켓 패널을 <#${config.ticketPanelChannelId}> 채널에 다시 게시했습니다.`)
+            : errorPanel('실패', '티켓 패널을 게시하지 못했습니다. 채널 ID와 봇 권한을 확인해 주세요.'),
+        ),
+      );
       return;
     }
 
     default:
-      await interaction.reply(ephemeral(errorEmbed('알 수 없는 명령', '지원하지 않는 명령입니다.')));
+      await interaction.reply(
+        payload(errorPanel('알 수 없는 명령', '지원하지 않는 명령입니다.'), { ephemeral: true }),
+      );
   }
 }
 
@@ -212,23 +213,26 @@ async function handleButton(interaction) {
   }
 }
 
+/** 처리에 시간이 걸리는 명령을 위해 먼저 컨테이너로 응답해 둡니다. */
+async function replyWorking(interaction, description) {
+  await interaction.reply(
+    payload(neutralPanel('처리 중입니다', description), { ephemeral: true }),
+  );
+}
+
 async function replyWithError(interaction) {
   if (!interaction.isRepliable?.()) return;
 
-  const payload = {
-    embeds: [
-      errorEmbed(
-        '오류가 발생했습니다',
-        '요청을 처리하지 못했습니다. 잠시 후 다시 시도하거나 스태프에게 문의해 주세요.',
-      ),
-    ],
-  };
+  const container = errorPanel(
+    '오류가 발생했습니다',
+    '요청을 처리하지 못했습니다. 잠시 후 다시 시도하거나 스태프에게 문의해 주세요.',
+  );
 
   try {
     if (interaction.deferred || interaction.replied) {
-      await interaction.followUp({ ...payload, flags: MessageFlags.Ephemeral });
+      await interaction.followUp(payload(container, { ephemeral: true }));
     } else {
-      await interaction.reply({ ...payload, flags: MessageFlags.Ephemeral });
+      await interaction.reply(payload(container, { ephemeral: true }));
     }
   } catch (error) {
     log.debug('오류 응답 전송 실패', error?.message ?? error);

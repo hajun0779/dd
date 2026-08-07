@@ -206,19 +206,35 @@ function renderContent(raw, ctx, collectedLinks) {
   });
   text = text.replace(/@(everyone|here)\b/g, '<span class="mention">@$1</span>');
 
-  // 6. 인용문과 줄바꿈
+  // 6. 제목, 작은 글씨, 인용문, 줄바꿈
   const lines = text.split('\n');
   const rendered = [];
   for (let index = 0; index < lines.length; index += 1) {
     const line = lines[index];
+
+    const heading = line.match(/^(#{1,3})\s+(.*)$/);
+    if (heading) {
+      const level = heading[1].length;
+      rendered.push(`<div class="md-h${level}">${heading[2]}</div>`);
+      continue;
+    }
+
+    const subtext = line.match(/^-#\s+(.*)$/);
+    if (subtext) {
+      rendered.push(`<div class="md-subtext">${subtext[1]}</div>`);
+      continue;
+    }
+
     const quoted = line.match(/^&gt;\s?(.*)$/);
     if (quoted) {
       rendered.push(`<div class="quote">${quoted[1].length > 0 ? quoted[1] : '&nbsp;'}</div>`);
       continue;
     }
-    const nextIsQuote = /^&gt;\s?/.test(lines[index + 1] ?? '');
+
+    const next = lines[index + 1] ?? '';
+    const nextIsBlock = /^(&gt;\s?|#{1,3}\s|-#\s)/.test(next);
     const isLast = index === lines.length - 1;
-    rendered.push(line + (!isLast && !nextIsQuote ? '<br>' : ''));
+    rendered.push(line + (!isLast && !nextIsBlock ? '<br>' : ''));
   }
   text = rendered.join('');
 
@@ -350,6 +366,167 @@ function renderEmbed(embed) {
   return `<div class="embed" style="border-left-color:${color}">${rows.join('')}</div>`;
 }
 
+// --- Components V2 렌더링 ---
+
+const BUTTON_STYLE_CLASS = {
+  1: 'btn-primary',
+  2: 'btn-secondary',
+  3: 'btn-success',
+  4: 'btn-danger',
+  5: 'btn-link',
+  6: 'btn-secondary',
+};
+
+/**
+ * Components V2 메시지를 렌더링합니다.
+ * 이 봇의 패널은 버튼이 컨테이너 안에 들어 있으므로 중첩 구조를 그대로 따라갑니다.
+ */
+async function renderMessageComponents(message, ctx, collected, inliner) {
+  const raw = message.components ?? [];
+  if (raw.length === 0) return '';
+
+  const nodes = [];
+  for (const component of raw) {
+    try {
+      nodes.push(typeof component?.toJSON === 'function' ? component.toJSON() : component);
+    } catch {
+      // 변환에 실패한 컴포넌트는 건너뜁니다.
+    }
+  }
+
+  const parts = [];
+  for (const node of nodes) {
+    const html = await renderV2Node(node, ctx, collected, inliner);
+    if (html) parts.push(html);
+  }
+
+  return parts.join('');
+}
+
+async function renderV2Node(node, ctx, collected, inliner) {
+  if (!node || typeof node !== 'object') return '';
+
+  switch (node.type) {
+    // 컨테이너
+    case 17: {
+      const children = [];
+      for (const child of node.components ?? []) {
+        const html = await renderV2Node(child, ctx, collected, inliner);
+        if (html) children.push(html);
+      }
+      const color = colorToHex(node.accent_color);
+      return `<div class="v2-container" style="border-left-color:${color}">${children.join('')}</div>`;
+    }
+
+    // 텍스트
+    case 10:
+      return `<div class="v2-text">${renderContent(node.content, ctx, collected.links)}</div>`;
+
+    // 구분선
+    case 14:
+      return node.divider === false
+        ? '<div class="v2-space"></div>'
+        : '<div class="v2-divider"></div>';
+
+    // 섹션 (본문 + 오른쪽 부속 요소)
+    case 9: {
+      const children = [];
+      for (const child of node.components ?? []) {
+        const html = await renderV2Node(child, ctx, collected, inliner);
+        if (html) children.push(html);
+      }
+
+      let accessory = '';
+      if (node.accessory) {
+        accessory = await renderV2Node(node.accessory, ctx, collected, inliner);
+      }
+
+      return `<div class="v2-section"><div class="v2-section-body">${children.join('')}</div>${
+        accessory ? `<div class="v2-section-accessory">${accessory}</div>` : ''
+      }</div>`;
+    }
+
+    // 썸네일
+    case 11: {
+      const url = node.media?.url;
+      if (!url) return '';
+      const src = (await inliner.inline(url, { maxBytes: 512 * 1024 })) ?? escapeHtml(url);
+      return `<img class="v2-thumbnail" src="${src}" alt="${escapeHtml(node.description ?? '')}" loading="lazy">`;
+    }
+
+    // 이미지 묶음
+    case 12: {
+      const images = [];
+      for (const item of node.items ?? []) {
+        const url = item?.media?.url;
+        if (!url) continue;
+        collected.links.add(url);
+        const src = (await inliner.inline(url)) ?? escapeHtml(url);
+        images.push(
+          `<a href="${src}" target="_blank" rel="noopener noreferrer"><img class="media" src="${src}" alt="${escapeHtml(
+            item.description ?? '',
+          )}" loading="lazy"></a>`,
+        );
+      }
+      return images.length > 0 ? `<div class="v2-gallery">${images.join('')}</div>` : '';
+    }
+
+    // 파일
+    case 13: {
+      const url = node.file?.url ?? '';
+      const name = node.name ?? url.split('/').pop() ?? '파일';
+      collected.attachments.push({
+        name,
+        url,
+        size: node.size ?? 0,
+        contentType: '파일 컴포넌트',
+      });
+      return `<div class="attachment file-card"><div class="file-meta">${escapeHtml(name)}${
+        url
+          ? ` · <a class="link" href="${escapeHtml(url)}" target="_blank" rel="noopener noreferrer">원본 링크</a>`
+          : ''
+      }</div></div>`;
+    }
+
+    // 액션 로우
+    case 1: {
+      const children = [];
+      for (const child of node.components ?? []) {
+        const html = await renderV2Node(child, ctx, collected, inliner);
+        if (html) children.push(html);
+      }
+      return children.length > 0 ? `<div class="v2-row">${children.join('')}</div>` : '';
+    }
+
+    // 버튼
+    case 2: {
+      const label = node.label ?? (node.emoji?.name ? node.emoji.name : '버튼');
+      const cls = BUTTON_STYLE_CLASS[node.style] ?? 'btn-secondary';
+      const disabled = node.disabled ? ' disabled' : '';
+      if (node.style === 5 && node.url) {
+        return `<a class="v2-button ${cls}${disabled}" href="${escapeHtml(node.url)}" target="_blank" rel="noopener noreferrer">${escapeHtml(label)}</a>`;
+      }
+      return `<span class="v2-button ${cls}${disabled}">${escapeHtml(label)}</span>`;
+    }
+
+    // 선택 메뉴
+    case 3:
+    case 5:
+    case 6:
+    case 7:
+    case 8: {
+      const placeholder = node.placeholder ?? '선택';
+      const options = (node.options ?? []).map((option) => option.label).filter(Boolean);
+      return `<span class="v2-select">${escapeHtml(placeholder)}${
+        options.length > 0 ? ` <span class="dim">(${escapeHtml(options.join(' / '))})</span>` : ''
+      }</span>`;
+    }
+
+    default:
+      return '';
+  }
+}
+
 function renderSticker(sticker) {
   const url = `https://media.discordapp.net/stickers/${sticker.id}.png`;
   return `<div class="attachment"><img class="sticker" src="${url}" alt="${escapeHtml(sticker.name ?? '스티커')}" loading="lazy"><div class="file-meta">스티커: ${escapeHtml(
@@ -461,6 +638,10 @@ export async function buildTranscriptHtml({ guild, channel, ticket, messages, tr
       const rendered = renderEmbed(embed);
       if (rendered) pieces.push(rendered);
     }
+
+    // 이 봇의 패널은 Components V2 컨테이너이므로 별도로 렌더링합니다.
+    const componentsHtml = await renderMessageComponents(message, ctx, collected, inliner);
+    if (componentsHtml) pieces.push(componentsHtml);
 
     if (pieces.length === 0) {
       pieces.push('<div class="content empty">(표시할 내용이 없는 메시지)</div>');
@@ -642,6 +823,28 @@ ul.list li { padding: 2px 0; font-size: 13px; }
 .embed-image { margin-top: 8px; }
 .embed-thumbnail img { width: 72px; height: 72px; border-radius: 6px; margin-top: 8px; }
 .embed-footer { color: var(--dim); font-size: 12px; margin-top: 8px; }
+.md-h1 { font-size: 20px; font-weight: 700; margin: 6px 0 2px; }
+.md-h2 { font-size: 17px; font-weight: 700; margin: 6px 0 2px; }
+.md-h3 { font-size: 15px; font-weight: 700; margin: 6px 0 2px; }
+.md-subtext { font-size: 12px; color: var(--dim); margin: 2px 0; }
+.v2-container { background: var(--panel-2); border-left: 4px solid var(--line); border-radius: 8px; padding: 12px 16px; margin: 6px 0; max-width: 560px; }
+.v2-text { margin: 2px 0; }
+.v2-divider { border-top: 1px solid var(--line); margin: 10px 0; }
+.v2-space { height: 8px; }
+.v2-section { display: flex; gap: 12px; align-items: flex-start; }
+.v2-section-body { flex: 1; min-width: 0; }
+.v2-section-accessory { flex: 0 0 auto; }
+.v2-thumbnail { width: 72px; height: 72px; object-fit: cover; border-radius: 8px; display: block; }
+.v2-gallery { display: flex; flex-wrap: wrap; gap: 6px; margin: 6px 0; }
+.v2-row { display: flex; flex-wrap: wrap; gap: 8px; margin: 8px 0 2px; }
+.v2-button { display: inline-block; padding: 7px 14px; border-radius: 8px; font-size: 13px; font-weight: 600; color: #fff; text-decoration: none; }
+.v2-button.disabled { opacity: 0.5; }
+.btn-primary { background: #5865f2; }
+.btn-secondary { background: #4e5058; }
+.btn-success { background: #248046; }
+.btn-danger { background: #da373c; }
+.btn-link { background: #4e5058; }
+.v2-select { display: inline-block; padding: 8px 14px; border: 1px solid var(--line); border-radius: 8px; background: #1e2024; font-size: 13px; color: var(--dim); }
 .notice { background: rgba(217,130,43,0.12); border: 1px solid rgba(217,130,43,0.4); color: #f0b571; border-radius: 8px; padding: 10px 14px; font-size: 13px; margin-top: 12px; }
 footer { color: var(--dim); font-size: 12px; margin-top: 32px; text-align: center; }
 </style>

@@ -75,6 +75,9 @@ export const config = {
   // .env 의 DISCORD_TOKEN 이 있으면 그걸 쓰고, 없으면 위의 BOT_TOKEN 을 씁니다.
   token: str('DISCORD_TOKEN', BOT_TOKEN.trim().length > 0 ? BOT_TOKEN.trim() : null),
 
+  // 컨테이너 맨 아래 작은 글씨에 들어갈 이름
+  brandName: str('BRAND_NAME', 'RoStation'),
+
   // 티켓
   ticketPanelChannelId: str('TICKET_PANEL_CHANNEL_ID', '1535140042652254219'),
   ticketStaffRoleId: str('TICKET_STAFF_ROLE_ID', '1535140290581635162'),

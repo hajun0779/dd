@@ -15,6 +15,8 @@ import { editPayload, errorPanel, neutralPanel, panel, payload, warningPanel } f
 import { ensurePanel } from './panel.js';
 import { buildTranscriptHtml, fetchAllMessages } from './transcript.js';
 
+const FOOTER = `${config.brandName} 티켓 시스템`;
+
 export const TICKET_IDS = {
   select: 'ticket:create',
   close: 'ticket:close',
@@ -61,7 +63,7 @@ export function buildTicketPanelPayload() {
     ],
     image: config.ticketPanelImageUrl,
     buttons: [menu],
-    footer: '예천군 티켓 시스템',
+    footer: FOOTER,
   });
 
   return payload(container);
@@ -103,7 +105,7 @@ function buildTicketControlPayload(ticket) {
         .setLabel('티켓 닫기')
         .setStyle(ButtonStyle.Danger),
     ],
-    footer: '예천군 티켓 시스템',
+    footer: FOOTER,
   });
 
   return payload(container);
@@ -115,7 +117,7 @@ export async function handleTicketCreate(interaction) {
   // 먼저 컨테이너로 응답해야 뒤이은 editReply 도 Components V2 로 유지됩니다.
   await interaction.reply(
     payload(
-      neutralPanel('티켓을 만드는 중입니다', '잠시만 기다려 주세요.', { footer: '예천군 티켓 시스템' }),
+      neutralPanel('티켓을 만드는 중입니다', '잠시만 기다려 주세요.', { footer: FOOTER }),
       { ephemeral: true },
     ),
   );
@@ -148,7 +150,7 @@ export async function handleTicketCreate(interaction) {
           warningPanel(
             '이미 열려 있는 티켓이 있습니다',
             `<#${existing.channelId}> 채널에서 계속 진행해 주세요.\n같은 종류의 티켓은 한 번에 하나만 열 수 있습니다.`,
-            { footer: '예천군 티켓 시스템' },
+            { footer: FOOTER },
           ),
         ),
       );
@@ -166,7 +168,7 @@ export async function handleTicketCreate(interaction) {
         errorPanel(
           '티켓을 만들지 못했습니다',
           '티켓 카테고리 설정이 올바르지 않습니다. 스태프에게 문의해 주세요.',
-          { footer: '예천군 티켓 시스템' },
+          { footer: FOOTER },
         ),
       ),
     );
@@ -235,7 +237,7 @@ export async function handleTicketCreate(interaction) {
         errorPanel(
           '티켓을 만들지 못했습니다',
           '봇에게 채널 관리 권한이 있는지, 카테고리의 채널 개수 제한(50개)에 걸리지 않았는지 확인해 주세요.',
-          { footer: '예천군 티켓 시스템' },
+          { footer: FOOTER },
         ),
       ),
     );
@@ -274,7 +276,7 @@ export async function handleTicketCreate(interaction) {
           { name: '문의 종류', value: type.label },
           { name: '만들어진 시간', value: formatKst(createdAt) },
         ],
-        footer: '예천군 티켓 시스템',
+        footer: FOOTER,
       }),
     ),
   );
@@ -341,7 +343,7 @@ export async function handleTicketCloseRequest(interaction) {
         errorPanel(
           '권한이 없습니다',
           `티켓은 <@&${config.ticketStaffRoleId}> 역할을 가진 스태프만 닫을 수 있습니다.`,
-          { footer: '예천군 티켓 시스템' },
+          { footer: FOOTER },
         ),
         { ephemeral: true },
       ),
@@ -353,7 +355,7 @@ export async function handleTicketCloseRequest(interaction) {
     await interaction.reply(
       payload(
         warningPanel('처리 중입니다', '이 티켓은 이미 닫히는 중입니다. 잠시만 기다려 주세요.', {
-          footer: '예천군 티켓 시스템',
+          footer: FOOTER,
         }),
         { ephemeral: true },
       ),
@@ -386,7 +388,7 @@ export async function handleTicketCloseRequest(interaction) {
             .setLabel('취소')
             .setStyle(ButtonStyle.Secondary),
         ],
-        footer: '예천군 티켓 시스템',
+        footer: FOOTER,
       }),
       { ephemeral: true },
     ),
@@ -396,7 +398,7 @@ export async function handleTicketCloseRequest(interaction) {
 export async function handleTicketCloseCancel(interaction) {
   await interaction.update(
     editPayload(
-      neutralPanel('취소되었습니다', '티켓은 그대로 열려 있습니다.', { footer: '예천군 티켓 시스템' }),
+      neutralPanel('취소되었습니다', '티켓은 그대로 열려 있습니다.', { footer: FOOTER }),
     ),
   );
 }
@@ -436,7 +438,7 @@ export async function handleTicketCloseConfirm(interaction) {
         color: config.colors.warning,
         title: '티켓을 닫는 중입니다',
         description: '대화 내용을 모아 기록 파일을 만들고 있습니다. 잠시만 기다려 주세요.',
-        footer: '예천군 티켓 시스템',
+        footer: FOOTER,
       }),
     ),
   );
@@ -459,7 +461,7 @@ export async function handleTicketCloseConfirm(interaction) {
             { name: '만들어진 시간', value: formatKst(ticket.createdAt) },
             { name: '닫힌 시간', value: formatKst(closedAt) },
           ],
-          footer: '예천군 티켓 시스템',
+          footer: FOOTER,
         }),
       ),
     );
@@ -502,7 +504,7 @@ export async function handleTicketCloseConfirm(interaction) {
               `닫은 사람: ${interaction.user.tag} (${interaction.user.id})`,
               `닫힌 시간: ${formatKst(closedAt)}`,
             ].join('\n'),
-            { footer: '예천군 티켓 시스템' },
+            { footer: FOOTER },
           ),
         ),
       )
@@ -576,7 +578,7 @@ async function sendTranscript({ transcriptChannel, guild, ticket, result, intera
       '첨부된 HTML 파일을 내려받아 열면 대화 내용, 이미지, 동영상, 링크, 첨부파일을 모두 확인할 수 있습니다.',
     ].join('\n'),
     fields,
-    footer: '예천군 티켓 시스템',
+    footer: FOOTER,
   });
 
   const message = payload(container);

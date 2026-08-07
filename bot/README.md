@@ -1,4 +1,4 @@
-# 예천군 문의 티켓 봇
+# RoStation 문의 티켓 봇
 
 Node.js(discord.js v14)로 만든 디스코드 문의 티켓 봇입니다.
 
@@ -139,7 +139,7 @@ TypeError: Cannot read properties of undefined (reading 'fileExists')
 
 ```bash
 npm install -g pm2
-pm2 start index.js --name yecheon-bot
+pm2 start index.js --name rostation-bot
 pm2 save
 ```
 
@@ -173,6 +173,7 @@ pm2 save
 | 이름 | 설명 |
 | --- | --- |
 | `DISCORD_TOKEN` | 봇 토큰. 넣으면 config.js 의 BOT_TOKEN 보다 우선합니다. |
+| `BRAND_NAME` | 컨테이너 꼬리말에 들어갈 이름 (RoStation) |
 | `TICKET_PANEL_CHANNEL_ID` | 티켓 패널 채널 (1535140042652254219) |
 | `TICKET_STAFF_ROLE_ID` | 스태프 역할 (1535140290581635162) |
 | `TICKET_TRANSCRIPT_CHANNEL_ID` | 기록 전송 채널 (1535140618626670623) |
@@ -193,7 +194,7 @@ pm2 save
 ```
 bot/
   index.js            실행 진입점, 상호작용 라우팅, 슬래시 명령 등록
-  config.js           토큰, 채널/역할 ID, 문의 종류 정의
+  config.js           토큰, 이름, 채널/역할 ID, 문의 종류 정의
   tickets.js          티켓 생성과 종료
   transcript.js       HTML 기록 생성 (Components V2 컨테이너도 그대로 재현)
   components.js       Components V2 컨테이너 만들기 (버튼을 안에 넣는 부분)

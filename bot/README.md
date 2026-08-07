@@ -68,18 +68,48 @@ Node.js(discord.js v14)로 만든 디스코드 봇입니다. 두 가지 기능�
 먼저 [nodejs.org](https://nodejs.org) 에서 **Node.js LTS** 를 설치해 주세요. (18.17 이상이 필요합니다.
 개발과 확인은 Node 22에서 했습니다.)
 
-```bash
-cd bot
-npm install
-cp .env.example .env    # 그리고 DISCORD_TOKEN 을 채웁니다
-npm start               # node index.js 와 같습니다
-```
+1. `bot` 폴더에서 라이브러리를 설치합니다. 처음 한 번만 하면 됩니다.
 
-`npm install` 은 처음 한 번만 하면 됩니다. 그 다음부터는 `npm start` 만 하면 켜집니다.
+   ```bash
+   cd bot
+   npm install
+   ```
+
+   설치되는 것은 `discord.js` 하나뿐입니다.
+
+2. `config.js` 를 메모장으로 열고, 맨 위 `BOT_TOKEN` 의 따옴표 사이에 봇 토큰을 붙여넣고 저장합니다.
+
+   ```js
+   const BOT_TOKEN = '여기에 토큰을 붙여넣으세요';
+   ```
+
+3. 실행합니다.
+
+   ```bash
+   npm start        # node index.js 와 같습니다
+   ```
+
 끌 때는 `Ctrl + C` 를 누르면 됩니다.
 
-채널과 역할 ID는 요청받은 값이 기본으로 들어 있어 그대로 두면 됩니다.
-바꾸고 싶으면 `.env` 에서 덮어쓰면 됩니다.
+채널과 역할 ID는 요청받은 값이 `config.js` 에 기본으로 들어 있어 그대로 두면 됩니다.
+
+### .env 파일을 쓰고 싶다면
+
+토큰을 소스 파일에 두기 싫으면 `bot` 폴더에 `.env` 파일을 만들어도 됩니다.
+`.env.example` 을 복사해서 쓰면 편합니다. `.env` 값이 `config.js` 의 `BOT_TOKEN` 보다 우선합니다.
+
+```bash
+cp .env.example .env    # 그리고 DISCORD_TOKEN 을 채웁니다
+```
+
+별도 라이브러리 없이 봇이 직접 읽으므로 `dotenv` 같은 걸 설치할 필요는 없습니다.
+
+### 토큰 주의사항
+
+`config.js` 에 토큰을 넣었다면 **그 파일을 깃허브에 올리거나 남에게 보내지 마세요.**
+토큰이 새면 다른 사람이 봇을 마음대로 조종할 수 있습니다.
+이미 샜다면 디스코드 개발자 포털에서 `Reset Token` 을 눌러 새로 발급받으면 됩니다.
+소스를 공유할 일이 있다면 `.env` 방식을 쓰는 편이 안전합니다. (`.env` 는 `.gitignore` 에 들어 있습니다.)
 
 ### 24시간 켜 두려면
 
@@ -127,6 +157,7 @@ pm2 save
 
 | 이름 | 설명 |
 | --- | --- |
+| `DISCORD_TOKEN` | 봇 토큰. 넣으면 config.js 의 BOT_TOKEN 보다 우선합니다. |
 | `VERIFY_PANEL_CHANNEL_ID` | 인증 패널 채널 (1418823709027733517) |
 | `VERIFIED_ROLE_ID` | 인증 완료 역할 (1418823708247720077) |
 | `NICKNAME_PREFIX` | 별명 앞에 붙일 문구 (예천군 시민ㅣ) |
@@ -139,7 +170,7 @@ pm2 save
 | `TRANSCRIPT_MAX_MESSAGES` | 기록에 담을 최대 메시지 수 (5000) |
 | `TRANSCRIPT_INLINE_MAX_BYTES` | HTML 안에 넣을 개별 파일 최대 크기 (2MB) |
 | `TRANSCRIPT_INLINE_TOTAL_BYTES` | HTML 안에 넣을 파일 총 용량 (6MB) |
-| `DATA_FILE` | 티켓 번호와 인증 정보 저장 경로 (./data/store.json) |
+| `DATA_FILE` | 티켓 번호와 인증 정보 저장 경로 (bot 폴더의 data/store.json) |
 
 ## 파일 구조
 
@@ -159,13 +190,13 @@ bot/
   store.js            데이터 저장 (티켓 번호, 인증 정보)
   time.js             한국 시간 서식
   log.js              로그 출력
-  package.json
-  .env.example
+  package.json        설치 정보 (discord.js 하나만 씁니다)
+  .env.example        .env 를 쓰고 싶을 때 참고할 예시
   README.md
 ```
 
 ## 데이터 저장
 
-`data/store.json` 에 티켓 번호 카운터, 열려 있는 티켓, 인증 정보가 저장됩니다.
+`bot/data/store.json` 에 티켓 번호 카운터, 열려 있는 티켓, 인증 정보가 저장됩니다.
 이 파일을 지우면 티켓 번호가 처음부터 다시 시작하니 주의해 주세요.
 쓰기는 임시 파일에 먼저 저장한 뒤 이름을 바꾸는 방식이라 도중에 꺼져도 파일이 깨지지 않습니다.

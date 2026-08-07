@@ -1,9 +1,62 @@
-// .env 파일이 있으면 읽어옵니다. dotenv 가 설치되어 있지 않아도 시스템 환경 변수로 동작합니다.
-try {
-  await import('dotenv/config');
-} catch {
-  // 무시하고 process.env 만 사용합니다.
+import fs from 'node:fs';
+import path from 'node:path';
+import { fileURLToPath } from 'node:url';
+
+// ===========================================================================
+//  봇 토큰
+//
+//  아래 따옴표 사이에 디스코드 봇 토큰을 붙여넣으면 바로 실행됩니다.
+//  (.env 파일을 만들어서 넣어도 되고, 그쪽이 우선합니다.)
+//
+//  주의: 여기에 토큰을 넣은 뒤에는 이 파일을 깃허브에 올리거나 남에게
+//  보내지 마세요. 토큰이 새면 봇을 남이 조종할 수 있습니다.
+//  토큰이 샜다면 디스코드 개발자 포털에서 Reset Token 을 눌러 주세요.
+// ===========================================================================
+const BOT_TOKEN = '';
+
+// 이 파일이 있는 폴더. 어느 위치에서 실행해도 경로가 어긋나지 않도록 씁니다.
+const BASE_DIR = path.dirname(fileURLToPath(import.meta.url));
+
+/** 같은 폴더의 .env 파일을 읽습니다. 이미 설정된 환경 변수는 덮어쓰지 않습니다. */
+function loadEnvFile() {
+  const envPath = path.join(BASE_DIR, '.env');
+
+  let raw;
+  try {
+    raw = fs.readFileSync(envPath, 'utf8');
+  } catch {
+    return; // .env 가 없으면 그냥 넘어갑니다.
+  }
+
+  for (const line of raw.split(/\r?\n/)) {
+    const trimmed = line.trim();
+    if (trimmed.length === 0 || trimmed.startsWith('#')) continue;
+
+    const match = trimmed.match(/^(?:export\s+)?([A-Za-z_][A-Za-z0-9_]*)\s*=\s*(.*)$/);
+    if (!match) continue;
+
+    const [, key, rawValue] = match;
+    // 이미 값이 들어 있는 환경 변수만 그대로 둡니다.
+    // 빈 문자열로 설정된 변수는 없는 것으로 보고 .env 값을 씁니다.
+    if (typeof process.env[key] === 'string' && process.env[key].trim().length > 0) continue;
+
+    let value = rawValue.trim();
+    if (
+      (value.startsWith('"') && value.endsWith('"') && value.length >= 2) ||
+      (value.startsWith("'") && value.endsWith("'") && value.length >= 2)
+    ) {
+      value = value.slice(1, -1);
+    } else {
+      // 따옴표가 없으면 줄 뒤쪽 주석을 잘라냅니다.
+      const comment = value.indexOf(' #');
+      if (comment !== -1) value = value.slice(0, comment).trim();
+    }
+
+    process.env[key] = value;
+  }
 }
+
+loadEnvFile();
 
 function str(name, fallback) {
   const value = process.env[name];
@@ -19,7 +72,8 @@ function int(name, fallback) {
 }
 
 export const config = {
-  token: str('DISCORD_TOKEN', null),
+  // .env 의 DISCORD_TOKEN 이 있으면 그걸 쓰고, 없으면 위의 BOT_TOKEN 을 씁니다.
+  token: str('DISCORD_TOKEN', BOT_TOKEN.trim().length > 0 ? BOT_TOKEN.trim() : null),
 
   // 로블록스 인증
   verifyPanelChannelId: str('VERIFY_PANEL_CHANNEL_ID', '1418823709027733517'),
@@ -34,8 +88,8 @@ export const config = {
   ticketCategoryId: str('TICKET_CATEGORY_ID', '1535141065160658944'),
   ticketDeleteDelaySeconds: int('TICKET_DELETE_DELAY_SECONDS', 5),
 
-  // 저장소
-  dataFile: str('DATA_FILE', './data/store.json'),
+  // 저장소. 실행 위치와 상관없이 이 폴더의 data/store.json 을 씁니다.
+  dataFile: str('DATA_FILE', path.join(BASE_DIR, 'data', 'store.json')),
 
   // 기록(HTML) 생성 제한
   transcript: {
@@ -84,7 +138,12 @@ export function getTicketType(value) {
 
 export function validateConfig() {
   const problems = [];
-  if (!config.token) problems.push('DISCORD_TOKEN 이 설정되지 않았습니다.');
+  if (!config.token) {
+    problems.push(
+      '봇 토큰이 없습니다. config.js 맨 위의 BOT_TOKEN 따옴표 사이에 토큰을 붙여넣거나, ' +
+        '같은 폴더에 .env 파일을 만들고 DISCORD_TOKEN=토큰 을 적어 주세요.',
+    );
+  }
 
   const requiredIds = {
     VERIFY_PANEL_CHANNEL_ID: config.verifyPanelChannelId,

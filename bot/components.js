@@ -110,10 +110,15 @@ export function panel({
     hasContent = true;
   }
 
-  if (footer) {
+  // 꼬리말과 저작권 문구는 항상 맨 아래에 작은 글씨로 붙습니다.
+  // -# 은 디스코드의 작은 글씨(subtext) 문법입니다.
+  const footerLines = [];
+  if (footer) footerLines.push(`-# ${footer}`);
+  if (config.copyrightText) footerLines.push(`-# ${config.copyrightText}`);
+
+  if (footerLines.length > 0) {
     separate();
-    // -# 은 디스코드의 작은 글씨(subtext) 문법입니다.
-    container.addTextDisplayComponents(text(`-# ${footer}`));
+    container.addTextDisplayComponents(text(footerLines.join('\n')));
     hasContent = true;
   }
 

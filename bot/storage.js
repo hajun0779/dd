@@ -10,9 +10,17 @@ const SETTINGS_MARKER = 'ROSTATION_SETTINGS_V1';
 const PRODUCT_MARKER = 'ROSTATION_PRODUCT_V1';
 const CACHE_MS = 20_000;
 
+export const MARKERS = {
+  assignment: 'ROSTATION_ASSIGN_V1',
+  payroll: 'ROSTATION_PAYROLL_V1',
+  warningBoard: 'ROSTATION_WARNBOARD_V1',
+};
+
 const DEFAULT_SETTINGS = {
   // 직원 명단에 쓰는 역할 목록
   staffRoles: [],
+  // 분야별 직원: [{ userId, field, nickname }]
+  fields: [],
 };
 
 let settingsCache = null;
@@ -68,6 +76,7 @@ export async function readSettings(client) {
   const parsed = message ? unwrap(SETTINGS_MARKER, message.content) : null;
   const data = { ...structuredClone(DEFAULT_SETTINGS), ...(parsed ?? {}) };
   if (!Array.isArray(data.staffRoles)) data.staffRoles = [];
+  if (!Array.isArray(data.fields)) data.fields = [];
 
   settingsCache = { data, expiresAt: Date.now() + CACHE_MS };
   return data;
@@ -216,6 +225,88 @@ export async function removeProduct(client, id) {
     }
   }
   return false;
+}
+
+// --- 일반 기록 (배당, 급여) ---
+//
+// 항목이 늘어나면 설정 메시지 하나에 다 담을 수 없어서, 기록 하나당 메시지 하나를 씁니다.
+// 고칠 때는 그 메시지를 수정합니다.
+
+let recordCounter = 0;
+
+/** 상호작용 ID 에 들어갈 짧은 기록 번호를 만듭니다. */
+export function makeRecordId(prefix = 'r') {
+  recordCounter = (recordCounter + 1) % 1000;
+  return `${prefix}${Date.now().toString(36)}${recordCounter.toString(36)}`;
+}
+
+async function scanRecords(client, marker, { limit = 5, stopAt = null } = {}) {
+  const channel = await getStorageChannel(client);
+  const found = [];
+  let before;
+
+  for (let page = 0; page < limit; page += 1) {
+    const batch = await channel.messages
+      .fetch({ limit: 100, ...(before ? { before } : {}) })
+      .catch(() => null);
+
+    if (!batch || batch.size === 0) break;
+
+    for (const message of batch.values()) {
+      if (message.author?.id !== client.user.id) continue;
+      const data = unwrap(marker, message.content);
+      if (!data?.id) continue;
+
+      const record = { ...data, messageId: message.id, message };
+      if (stopAt && data.id === stopAt) return [record];
+      found.push(record);
+    }
+
+    const ordered = [...batch.values()];
+    before = ordered[ordered.length - 1].id;
+    if (batch.size < 100) break;
+  }
+
+  return stopAt ? [] : found;
+}
+
+export async function listRecords(client, marker) {
+  const records = await scanRecords(client, marker);
+  return records.sort((a, b) => (a.createdAt ?? 0) - (b.createdAt ?? 0));
+}
+
+export async function getRecord(client, marker, id) {
+  const [record] = await scanRecords(client, marker, { stopAt: id });
+  return record ?? null;
+}
+
+export async function addRecord(client, marker, data) {
+  const channel = await getStorageChannel(client);
+  const content = wrap(marker, data);
+
+  if (content.length > 1900) {
+    throw new StorageError('내용이 너무 길어 저장할 수 없습니다. 글자 수를 줄여 주세요.');
+  }
+
+  const sent = await channel.send({ content });
+  return { ...data, messageId: sent.id, message: sent };
+}
+
+/** 기록을 고칩니다. 없으면 null 을 돌려줍니다. */
+export async function updateRecord(client, marker, id, patch) {
+  const record = await getRecord(client, marker, id);
+  if (!record) return null;
+
+  const { message, messageId, ...rest } = record;
+  const next = { ...rest, ...patch, id };
+  const content = wrap(marker, next);
+
+  if (content.length > 1900) {
+    throw new StorageError('내용이 너무 길어 저장할 수 없습니다. 글자 수를 줄여 주세요.');
+  }
+
+  await message.edit({ content });
+  return { ...next, messageId, message };
 }
 
 /** 이름에서 제품 ID 를 만듭니다. 상호작용 ID 에 들어가므로 짧고 안전하게 만듭니다. */

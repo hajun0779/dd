@@ -36,6 +36,37 @@ import {
   handleProductSetupCommand,
   isProductCustomId,
 } from './products.js';
+import {
+  ASSIGN_IDS,
+  checkOverdue,
+  handleAdjustAccept,
+  handleAdjustForm,
+  handleAdjustReject,
+  handleAdjustRejectForm,
+  handleAdjustRequest,
+  handleAssignAccept,
+  handleAssignAcceptForm,
+  handleAssignCommand,
+  handleAssignCreate,
+  handleAssignPick,
+  handleAssignReject,
+  handleAssignRejectForm,
+  handleExtend,
+  handleFieldListCommand,
+  handleFieldRemoveCommand,
+  handleFieldSetupCommand,
+  isAssignCustomId,
+  refreshWarningBoard,
+} from './assignments.js';
+import {
+  PAYROLL_IDS,
+  handlePayCommand,
+  handlePayDone,
+  handlePayForm,
+  handlePayStart,
+  handlePayStatusCommand,
+  isPayrollCustomId,
+} from './payroll.js';
 
 const MANAGE_GUILD = PermissionsBitField.Flags.ManageGuild;
 
@@ -157,6 +188,62 @@ const COMMANDS = [
     .addUserOption((option) =>
       option.setName('유저').setDescription('받을 사람').setRequired(true),
     ),
+
+  new SlashCommandBuilder()
+    .setName('분야설정')
+    .setDescription('직원을 분야에 등록하고 관리합니다.')
+    .setDefaultMemberPermissions(MANAGE_GUILD)
+    .setContexts(InteractionContextType.Guild)
+    .addSubcommand((sub) =>
+      sub
+        .setName('등록')
+        .setDescription('직원을 분야에 넣습니다. 같은 사람을 다시 넣으면 덮어씁니다.')
+        .addUserOption((option) => option.setName('유저').setDescription('직원').setRequired(true))
+        .addStringOption((option) =>
+          option.setName('분야').setDescription('분야 이름').setRequired(true).setMaxLength(30),
+        )
+        .addStringOption((option) =>
+          option.setName('별명').setDescription('목록에 표시할 별명').setRequired(true).setMaxLength(30),
+        ),
+    )
+    .addSubcommand((sub) =>
+      sub
+        .setName('삭제')
+        .setDescription('직원을 분야에서 뺍니다.')
+        .addUserOption((option) => option.setName('유저').setDescription('직원').setRequired(true))
+        .addStringOption((option) =>
+          option.setName('분야').setDescription('분야 이름').setRequired(true).setMaxLength(30),
+        ),
+    )
+    .addSubcommand((sub) => sub.setName('목록').setDescription('분야별 직원을 봅니다.')),
+
+  new SlashCommandBuilder()
+    .setName('배당')
+    .setDescription('분야를 골라 업무를 배당합니다.')
+    .setDefaultMemberPermissions(MANAGE_GUILD)
+    .setContexts(InteractionContextType.Guild)
+    .addStringOption((option) =>
+      option.setName('분야').setDescription('배당할 분야').setRequired(true).setMaxLength(30),
+    ),
+
+  new SlashCommandBuilder()
+    .setName('급여지급')
+    .setDescription('직원에게 급여 안내를 보냅니다.')
+    .setDefaultMemberPermissions(MANAGE_GUILD)
+    .setContexts(InteractionContextType.Guild)
+    .addStringOption((option) =>
+      option.setName('급여').setDescription('예: 100,000원').setRequired(true).setMaxLength(40),
+    )
+    .addUserOption((option) => option.setName('직원').setDescription('받을 직원').setRequired(true)),
+
+  new SlashCommandBuilder()
+    .setName('지급상태')
+    .setDescription('지금까지 지급된 급여를 봅니다.')
+    .setDefaultMemberPermissions(MANAGE_GUILD)
+    .setContexts(InteractionContextType.Guild)
+    .addUserOption((option) =>
+      option.setName('직원').setDescription('볼 직원 (비우면 본인)').setRequired(false),
+    ),
 ].map((command) => command.toJSON());
 
 const client = new Client({
@@ -210,6 +297,15 @@ client.once(Events.ClientReady, async () => {
   // 봇이 실행될 때마다 문의 패널을 자동으로 게시합니다.
   await deployTicketPanel(client);
 
+  // 기간이 지난 배당을 주기적으로 확인합니다.
+  const runCheck = () => {
+    checkOverdue(client).catch((error) => log.error('기간 확인 실패', error?.message ?? error));
+  };
+  runCheck();
+  setInterval(runCheck, 10 * 60_000).unref();
+
+  await refreshWarningBoard(client).catch(() => {});
+
   log.info('봇 준비가 끝났습니다.');
 });
 
@@ -237,14 +333,14 @@ client.on(Events.InteractionCreate, async (interaction) => {
         await handleTicketCreate(interaction);
       } else if (interaction.customId.startsWith(REVIEW_IDS.pick)) {
         await handleReviewPick(interaction);
+      } else if (interaction.customId === ASSIGN_IDS.pick) {
+        await handleAssignPick(interaction);
       }
       return;
     }
 
     if (interaction.isModalSubmit()) {
-      if (interaction.customId.startsWith(REVIEW_IDS.form)) {
-        await handleReviewSubmit(interaction);
-      }
+      await handleModal(interaction);
       return;
     }
 
@@ -299,6 +395,26 @@ async function handleCommand(interaction) {
       await handleProductSendCommand(interaction);
       return;
 
+    case '분야설정': {
+      const sub = interaction.options.getSubcommand();
+      if (sub === '등록') await handleFieldSetupCommand(interaction);
+      else if (sub === '삭제') await handleFieldRemoveCommand(interaction);
+      else await handleFieldListCommand(interaction);
+      return;
+    }
+
+    case '배당':
+      await handleAssignCommand(interaction);
+      return;
+
+    case '급여지급':
+      await handlePayCommand(interaction);
+      return;
+
+    case '지급상태':
+      await handlePayStatusCommand(interaction);
+      return;
+
     default:
       await interaction.reply(
         payload(errorPanel('알 수 없는 명령', '지원하지 않는 명령입니다.'), { ephemeral: true }),
@@ -329,6 +445,51 @@ async function handleButton(interaction) {
     await handleProductGet(interaction);
     return;
   }
+
+  if (isAssignCustomId(customId)) {
+    if (idIs(customId, ASSIGN_IDS.accept)) await handleAssignAccept(interaction);
+    else if (idIs(customId, ASSIGN_IDS.reject)) await handleAssignReject(interaction);
+    else if (idIs(customId, ASSIGN_IDS.adjustAccept)) await handleAdjustAccept(interaction);
+    else if (idIs(customId, ASSIGN_IDS.adjustReject)) await handleAdjustReject(interaction);
+    else if (idIs(customId, ASSIGN_IDS.adjust)) await handleAdjustRequest(interaction);
+    else if (idIs(customId, ASSIGN_IDS.extend)) await handleExtend(interaction);
+    return;
+  }
+
+  if (isPayrollCustomId(customId)) {
+    if (idIs(customId, PAYROLL_IDS.start)) await handlePayStart(interaction);
+    else if (idIs(customId, PAYROLL_IDS.done)) await handlePayDone(interaction);
+  }
+}
+
+async function handleModal(interaction) {
+  const { customId } = interaction;
+
+  if (idIs(customId, REVIEW_IDS.form)) {
+    await handleReviewSubmit(interaction);
+    return;
+  }
+
+  if (isAssignCustomId(customId)) {
+    if (idIs(customId, ASSIGN_IDS.newForm)) await handleAssignCreate(interaction);
+    else if (idIs(customId, ASSIGN_IDS.acceptForm)) await handleAssignAcceptForm(interaction);
+    else if (idIs(customId, ASSIGN_IDS.rejectForm)) await handleAssignRejectForm(interaction);
+    else if (idIs(customId, ASSIGN_IDS.adjustRejectForm)) await handleAdjustRejectForm(interaction);
+    else if (idIs(customId, ASSIGN_IDS.adjustForm)) await handleAdjustForm(interaction);
+    return;
+  }
+
+  if (isPayrollCustomId(customId) && idIs(customId, PAYROLL_IDS.form)) {
+    await handlePayForm(interaction);
+  }
+}
+
+/**
+ * 상호작용 ID 가 그 종류인지 확인합니다.
+ * 콜론 경계까지 봐야 assign:adjust 와 assign:adjustok 이 섞이지 않습니다.
+ */
+function idIs(customId, prefix) {
+  return customId === prefix || customId.startsWith(`${prefix}:`);
 }
 
 /** 처리에 시간이 걸리는 명령을 위해 먼저 컨테이너로 응답해 둡니다. */

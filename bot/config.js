@@ -78,6 +78,12 @@ export const config = {
   // 컨테이너 맨 아래 작은 글씨에 들어갈 이름
   brandName: str('BRAND_NAME', 'RoStation'),
 
+  // 모든 컨테이너 맨 아래에 붙는 저작권 문구
+  copyrightText: str(
+    'COPYRIGHT_TEXT',
+    `Copyright ${str('COPYRIGHT_YEAR', '2026')}. ${str('BRAND_NAME', 'RoStation')}. All rights reserved.`,
+  ),
+
   // 티켓
   ticketPanelChannelId: str('TICKET_PANEL_CHANNEL_ID', '1535140042652254219'),
   ticketStaffRoleId: str('TICKET_STAFF_ROLE_ID', '1535140290581635162'),
@@ -85,6 +91,19 @@ export const config = {
   ticketDeleteDelaySeconds: int('TICKET_DELETE_DELAY_SECONDS', 5),
   // 티켓 패널 안에 넣을 배너 이미지 주소. 비워 두면 이미지 없이 나갑니다.
   ticketPanelImageUrl: str('TICKET_PANEL_IMAGE_URL', null),
+
+  // 총관리자 역할. 모든 명령을 쓸 수 있고, 모든 보고를 DM 으로 받습니다.
+  adminRoleId: str('ADMIN_ROLE_ID', null),
+
+  // 업무 배당
+  assignListChannelId: str('ASSIGN_LIST_CHANNEL_ID', null),
+  assignStatusChannelId: str('ASSIGN_STATUS_CHANNEL_ID', null),
+  warningChannelId: str('WARNING_CHANNEL_ID', null),
+  payrollChannelId: str('PAYROLL_CHANNEL_ID', null),
+
+  // 기간이 지난 뒤 몇 시간마다 알릴지, 연장하면 몇 시간을 더 줄지
+  overdueNoticeHours: int('OVERDUE_NOTICE_HOURS', 1),
+  extendHours: int('EXTEND_HOURS', 2),
 
   // 후기가 올라갈 채널
   reviewChannelId: str('REVIEW_CHANNEL_ID', null),
@@ -196,11 +215,17 @@ export function validateConfig() {
 
 /** 아직 채우지 않은 선택 설정을 알려 줍니다. */
 export function getMissingOptionalIds() {
-  const missing = [];
-  if (!config.reviewChannelId) missing.push(['REVIEW_CHANNEL_ID', '후기 채널']);
-  if (!config.storageChannelId) missing.push(['STORAGE_CHANNEL_ID', '설정과 제품 보관 채널']);
-  if (!config.productRoleId) missing.push(['PRODUCT_APPROVAL_ROLE_ID', '제품 담당 역할']);
-  return missing;
+  const wanted = [
+    ['ADMIN_ROLE_ID', '총관리자 역할', config.adminRoleId],
+    ['STORAGE_CHANNEL_ID', '설정과 제품 보관 채널', config.storageChannelId],
+    ['REVIEW_CHANNEL_ID', '후기 채널', config.reviewChannelId],
+    ['PRODUCT_APPROVAL_ROLE_ID', '제품 담당 역할', config.productRoleId],
+    ['ASSIGN_LIST_CHANNEL_ID', '배당 목록 채널', config.assignListChannelId],
+    ['ASSIGN_STATUS_CHANNEL_ID', '배당 상황 채널', config.assignStatusChannelId],
+    ['WARNING_CHANNEL_ID', '경고 상태 채널', config.warningChannelId],
+    ['PAYROLL_CHANNEL_ID', '급여 신청 채널', config.payrollChannelId],
+  ];
+  return wanted.filter(([, , value]) => !value).map(([name, label]) => [name, label]);
 }
 
 /** 아직 채우지 않아 통합 문의 카테고리를 같이 쓰고 있는 종류를 알려 줍니다. */

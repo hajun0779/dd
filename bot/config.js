@@ -75,14 +75,6 @@ export const config = {
   // .env 의 DISCORD_TOKEN 이 있으면 그걸 쓰고, 없으면 위의 BOT_TOKEN 을 씁니다.
   token: str('DISCORD_TOKEN', BOT_TOKEN.trim().length > 0 ? BOT_TOKEN.trim() : null),
 
-  // 로블록스 인증
-  verifyPanelChannelId: str('VERIFY_PANEL_CHANNEL_ID', '1418823709027733517'),
-  verifiedRoleId: str('VERIFIED_ROLE_ID', '1418823708247720077'),
-  nicknamePrefix: str('NICKNAME_PREFIX', '예천군 시민ㅣ'),
-  verifyCodeTtlMinutes: int('VERIFY_CODE_TTL_MINUTES', 30),
-  // 인증 패널 안에 넣을 배너 이미지 주소. 비워 두면 이미지 없이 나갑니다.
-  verifyPanelImageUrl: str('VERIFY_PANEL_IMAGE_URL', null),
-
   // 티켓
   ticketPanelChannelId: str('TICKET_PANEL_CHANNEL_ID', '1535140042652254219'),
   ticketStaffRoleId: str('TICKET_STAFF_ROLE_ID', '1535140290581635162'),
@@ -142,6 +134,7 @@ export function getTicketType(value) {
 
 export function validateConfig() {
   const problems = [];
+
   if (!config.token) {
     problems.push(
       '봇 토큰이 없습니다. config.js 맨 위의 BOT_TOKEN 따옴표 사이에 토큰을 붙여넣거나, ' +
@@ -150,8 +143,6 @@ export function validateConfig() {
   }
 
   const requiredIds = {
-    VERIFY_PANEL_CHANNEL_ID: config.verifyPanelChannelId,
-    VERIFIED_ROLE_ID: config.verifiedRoleId,
     TICKET_PANEL_CHANNEL_ID: config.ticketPanelChannelId,
     TICKET_STAFF_ROLE_ID: config.ticketStaffRoleId,
     TICKET_TRANSCRIPT_CHANNEL_ID: config.ticketTranscriptChannelId,

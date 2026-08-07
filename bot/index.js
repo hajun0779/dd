@@ -15,16 +15,6 @@ import { log } from './log.js';
 import { editPayload, errorPanel, neutralPanel, payload, successPanel } from './components.js';
 
 import {
-  VERIFY_IDS,
-  deployVerifyPanel,
-  handleVerifyCheck,
-  handleVerifyModalSubmit,
-  handleVerifyReissue,
-  isVerificationCustomId,
-  openVerifyModal,
-} from './verification.js';
-
-import {
   TICKET_IDS,
   deployTicketPanel,
   handleTicketCloseCancel,
@@ -36,17 +26,8 @@ import {
 
 const COMMANDS = [
   new SlashCommandBuilder()
-    .setName('인증')
-    .setDescription('로블록스 계정을 서버 계정과 연동합니다.')
-    .setContexts(InteractionContextType.Guild),
-  new SlashCommandBuilder()
-    .setName('인증패널')
-    .setDescription('인증 패널을 다시 게시합니다.')
-    .setDefaultMemberPermissions(PermissionsBitField.Flags.ManageGuild)
-    .setContexts(InteractionContextType.Guild),
-  new SlashCommandBuilder()
     .setName('티켓패널')
-    .setDescription('티켓 패널을 다시 게시합니다.')
+    .setDescription('문의 티켓 패널을 다시 게시합니다.')
     .setDefaultMemberPermissions(PermissionsBitField.Flags.ManageGuild)
     .setContexts(InteractionContextType.Guild),
 ].map((command) => command.toJSON());
@@ -54,7 +35,6 @@ const COMMANDS = [
 const client = new Client({
   intents: [
     GatewayIntentBits.Guilds,
-    GatewayIntentBits.GuildMembers,
     GatewayIntentBits.GuildMessages,
     GatewayIntentBits.MessageContent,
   ],
@@ -81,13 +61,9 @@ client.once(Events.ClientReady, async () => {
   log.info(`로그인 완료: ${client.user.tag} (${client.user.id})`);
   log.info(`참여 중인 서버: ${client.guilds.cache.size}개`);
 
-  const pruned = store.prunePending();
-  if (pruned > 0) log.info(`만료된 인증 대기 ${pruned}건을 정리했습니다.`);
-
   await registerCommands();
 
-  // 봇이 실행될 때마다 패널을 자동으로 게시합니다.
-  await deployVerifyPanel(client);
+  // 봇이 실행될 때마다 티켓 패널을 자동으로 게시합니다.
   await deployTicketPanel(client);
 
   log.info('봇 준비가 끝났습니다.');
@@ -122,41 +98,20 @@ client.on(Events.InteractionCreate, async (interaction) => {
       return;
     }
 
-    if (interaction.isModalSubmit()) {
-      if (interaction.customId === VERIFY_IDS.modal) {
-        await handleVerifyModalSubmit(interaction);
-      }
-      return;
-    }
-
     if (interaction.isButton()) {
       await handleButton(interaction);
     }
   } catch (error) {
-    log.error(`상호작용 처리 중 오류 (${interaction.customId ?? interaction.commandName ?? '알 수 없음'})`, error?.stack ?? error);
+    log.error(
+      `상호작용 처리 중 오류 (${interaction.customId ?? interaction.commandName ?? '알 수 없음'})`,
+      error?.stack ?? error,
+    );
     await replyWithError(interaction);
   }
 });
 
 async function handleCommand(interaction) {
   switch (interaction.commandName) {
-    case '인증':
-      await openVerifyModal(interaction);
-      return;
-
-    case '인증패널': {
-      await replyWorking(interaction, '인증 패널을 다시 게시하고 있습니다.');
-      const sent = await deployVerifyPanel(client);
-      await interaction.editReply(
-        editPayload(
-          sent
-            ? successPanel('완료', `인증 패널을 <#${config.verifyPanelChannelId}> 채널에 다시 게시했습니다.`)
-            : errorPanel('실패', '인증 패널을 게시하지 못했습니다. 채널 ID와 봇 권한을 확인해 주세요.'),
-        ),
-      );
-      return;
-    }
-
     case '티켓패널': {
       await replyWorking(interaction, '티켓 패널을 다시 게시하고 있습니다.');
       const sent = await deployTicketPanel(client);
@@ -180,36 +135,19 @@ async function handleCommand(interaction) {
 async function handleButton(interaction) {
   const { customId } = interaction;
 
-  if (isVerificationCustomId(customId)) {
-    switch (customId) {
-      case VERIFY_IDS.start:
-        await openVerifyModal(interaction);
-        return;
-      case VERIFY_IDS.check:
-        await handleVerifyCheck(interaction);
-        return;
-      case VERIFY_IDS.reissue:
-        await handleVerifyReissue(interaction);
-        return;
-      default:
-        return;
-    }
-  }
+  if (!isTicketCustomId(customId)) return;
 
-  if (isTicketCustomId(customId)) {
-    switch (customId) {
-      case TICKET_IDS.close:
-        await handleTicketCloseRequest(interaction);
-        return;
-      case TICKET_IDS.closeConfirm:
-        await handleTicketCloseConfirm(interaction);
-        return;
-      case TICKET_IDS.closeCancel:
-        await handleTicketCloseCancel(interaction);
-        return;
-      default:
-        return;
-    }
+  switch (customId) {
+    case TICKET_IDS.close:
+      await handleTicketCloseRequest(interaction);
+      return;
+    case TICKET_IDS.closeConfirm:
+      await handleTicketCloseConfirm(interaction);
+      return;
+    case TICKET_IDS.closeCancel:
+      await handleTicketCloseCancel(interaction);
+      return;
+    default:
   }
 }
 
@@ -271,10 +209,6 @@ async function main() {
   }
 
   await store.load();
-
-  // 30분마다 만료된 인증 대기 항목을 정리합니다.
-  setInterval(() => store.prunePending(), 30 * 60 * 1000).unref();
-
   await client.login(config.token);
 }
 

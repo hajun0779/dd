@@ -1,8 +1,8 @@
 {
-  "name": "yecheon-discord-bot",
+  "name": "yecheon-ticket-bot",
   "version": "1.0.0",
   "private": true,
-  "description": "Roblox verification and ticket system Discord bot",
+  "description": "Discord ticket system bot with HTML transcripts (Components V2)",
   "type": "module",
   "main": "index.js",
   "engines": {

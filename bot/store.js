@@ -4,15 +4,11 @@ import { config } from './config.js';
 import { log } from './log.js';
 
 const DEFAULT_DATA = {
-  // 티켓 번호 카운터: { general: 0, bug: 0, partner: 0 }
+  // 티켓 번호 카운터: { "<서버ID>:<종류>": 3 }
   counters: {},
   // 열려 있는 티켓: { [channelId]: { channelId, guildId, type, ownerId, number, name, createdAt } }
   tickets: {},
-  // 인증 완료된 사용자: { [`${guildId}:${userId}`]: { robloxId, robloxName, verifiedAt } }
-  verified: {},
-  // 인증 진행 중인 사용자: { [`${guildId}:${userId}`]: { code, robloxId, robloxName, issuedAt, expiresAt } }
-  pending: {},
-  // 봇이 게시한 패널 메시지: { verify: { channelId, messageId }, ticket: { ... } }
+  // 봇이 게시한 패널 메시지: { ticket: { channelId, messageId } }
   panels: {},
 };
 
@@ -21,7 +17,6 @@ class Store {
     this.filePath = path.resolve(filePath);
     this.data = structuredClone(DEFAULT_DATA);
     this.writeChain = Promise.resolve();
-    this.dirty = false;
   }
 
   async load() {
@@ -98,47 +93,6 @@ class Store {
     );
   }
 
-  // --- 인증 ---
-
-  #memberKey(guildId, userId) {
-    return `${guildId}:${userId}`;
-  }
-
-  setPending(guildId, userId, payload) {
-    this.data.pending[this.#memberKey(guildId, userId)] = payload;
-    this.save();
-  }
-
-  getPending(guildId, userId) {
-    return this.data.pending[this.#memberKey(guildId, userId)] ?? null;
-  }
-
-  clearPending(guildId, userId) {
-    delete this.data.pending[this.#memberKey(guildId, userId)];
-    this.save();
-  }
-
-  setVerified(guildId, userId, payload) {
-    this.data.verified[this.#memberKey(guildId, userId)] = payload;
-    this.save();
-  }
-
-  getVerified(guildId, userId) {
-    return this.data.verified[this.#memberKey(guildId, userId)] ?? null;
-  }
-
-  /** 다른 디스코드 계정이 이미 같은 로블록스 계정을 연동했는지 확인합니다. */
-  findVerifiedByRobloxId(guildId, robloxId) {
-    const prefix = `${guildId}:`;
-    for (const [key, value] of Object.entries(this.data.verified)) {
-      if (!key.startsWith(prefix)) continue;
-      if (String(value.robloxId) === String(robloxId)) {
-        return { userId: key.slice(prefix.length), ...value };
-      }
-    }
-    return null;
-  }
-
   // --- 패널 ---
 
   setPanel(name, payload) {
@@ -148,19 +102,6 @@ class Store {
 
   getPanel(name) {
     return this.data.panels[name] ?? null;
-  }
-
-  /** 만료된 인증 대기 항목을 정리합니다. */
-  prunePending(now = Date.now()) {
-    let removed = 0;
-    for (const [key, value] of Object.entries(this.data.pending)) {
-      if (!value?.expiresAt || value.expiresAt <= now) {
-        delete this.data.pending[key];
-        removed += 1;
-      }
-    }
-    if (removed > 0) this.save();
-    return removed;
   }
 }
 

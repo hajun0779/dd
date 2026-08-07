@@ -1,6 +1,6 @@
 import { promises as fs } from 'node:fs';
 import path from 'node:path';
-import { config } from '../config.js';
+import { config } from './config.js';
 import { log } from './log.js';
 
 const DEFAULT_DATA = {

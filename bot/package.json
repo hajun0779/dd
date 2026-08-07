@@ -4,13 +4,13 @@
   "private": true,
   "description": "Roblox verification and ticket system Discord bot",
   "type": "module",
-  "main": "src/index.js",
+  "main": "index.js",
   "engines": {
     "node": ">=18.17.0"
   },
   "scripts": {
-    "start": "node src/index.js",
-    "check": "node --check src/index.js"
+    "start": "node index.js",
+    "check": "node --check index.js"
   },
   "dependencies": {
     "discord.js": "^14.18.0",

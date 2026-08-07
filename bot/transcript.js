@@ -1,6 +1,6 @@
-import { config } from '../config.js';
-import { log } from '../util/log.js';
-import { formatKst, formatKstTime, formatDuration } from '../util/time.js';
+import { config } from './config.js';
+import { log } from './log.js';
+import { formatKst, formatKstTime, formatDuration } from './time.js';
 
 const PLACEHOLDER_START = '\u0000B';
 const PLACEHOLDER_END = '\u0000';

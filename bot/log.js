@@ -1,4 +1,4 @@
-import { config } from '../config.js';
+import { config } from './config.js';
 
 function stamp() {
   return new Date().toLocaleString('sv-SE', { timeZone: config.timezone, hour12: false });

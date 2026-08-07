@@ -8,14 +8,14 @@ import {
   TextInputStyle,
 } from 'discord.js';
 
-import { config } from '../config.js';
-import { store } from '../util/store.js';
-import { log } from '../util/log.js';
-import { formatKst } from '../util/time.js';
-import { buildEmbed, errorEmbed, ephemeral, warningEmbed } from '../util/embeds.js';
-import { ensurePanel } from '../util/panel.js';
-import { generateVerificationCode, descriptionContainsCode } from '../roblox/code.js';
-import { getAvatarHeadshotUrl, getUserById, getUserByUsername, profileUrl, RobloxApiError } from '../roblox/api.js';
+import { config } from './config.js';
+import { store } from './store.js';
+import { log } from './log.js';
+import { formatKst } from './time.js';
+import { buildEmbed, errorEmbed, ephemeral, warningEmbed } from './embeds.js';
+import { ensurePanel } from './panel.js';
+import { generateVerificationCode, descriptionContainsCode } from './roblox-code.js';
+import { getAvatarHeadshotUrl, getUserById, getUserByUsername, profileUrl, RobloxApiError } from './roblox-api.js';
 
 export const VERIFY_IDS = {
   start: 'verify:start',

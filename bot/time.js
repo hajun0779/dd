@@ -1,4 +1,4 @@
-import { config } from '../config.js';
+import { config } from './config.js';
 
 const dateTimeFormatter = new Intl.DateTimeFormat('ko-KR', {
   timeZone: config.timezone,

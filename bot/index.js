@@ -11,9 +11,9 @@ import {
 } from 'discord.js';
 
 import { config, validateConfig } from './config.js';
-import { store } from './util/store.js';
-import { log } from './util/log.js';
-import { errorEmbed, ephemeral, successEmbed } from './util/embeds.js';
+import { store } from './store.js';
+import { log } from './log.js';
+import { errorEmbed, ephemeral, successEmbed } from './embeds.js';
 
 import {
   VERIFY_IDS,
@@ -23,7 +23,7 @@ import {
   handleVerifyReissue,
   isVerificationCustomId,
   openVerifyModal,
-} from './features/verification.js';
+} from './verification.js';
 
 import {
   TICKET_IDS,
@@ -33,7 +33,7 @@ import {
   handleTicketCloseRequest,
   handleTicketCreate,
   isTicketCustomId,
-} from './features/tickets.js';
+} from './tickets.js';
 
 const COMMANDS = [
   new SlashCommandBuilder()

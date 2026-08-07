@@ -9,12 +9,12 @@ import {
   StringSelectMenuBuilder,
 } from 'discord.js';
 
-import { config, TICKET_TYPES, getTicketType } from '../config.js';
-import { store } from '../util/store.js';
-import { log } from '../util/log.js';
-import { formatKst, sleep } from '../util/time.js';
-import { buildEmbed, errorEmbed, ephemeral, warningEmbed } from '../util/embeds.js';
-import { ensurePanel } from '../util/panel.js';
+import { config, TICKET_TYPES, getTicketType } from './config.js';
+import { store } from './store.js';
+import { log } from './log.js';
+import { formatKst, sleep } from './time.js';
+import { buildEmbed, errorEmbed, ephemeral, warningEmbed } from './embeds.js';
+import { ensurePanel } from './panel.js';
 import { buildTranscriptHtml, fetchAllMessages } from './transcript.js';
 
 export const TICKET_IDS = {

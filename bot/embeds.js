@@ -1,5 +1,5 @@
 import { EmbedBuilder, MessageFlags } from 'discord.js';
-import { config } from '../config.js';
+import { config } from './config.js';
 
 /**
  * 이 봇의 모든 메시지는 임베드로만 전송됩니다.

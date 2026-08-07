@@ -1,4 +1,4 @@
-import { log } from '../util/log.js';
+import { log } from './log.js';
 
 const USERS_API = 'https://users.roblox.com/v1';
 const THUMBNAILS_API = 'https://thumbnails.roblox.com/v1';

@@ -62,21 +62,34 @@ Node.js(discord.js v14)로 만든 디스코드 봇입니다. 두 가지 기능�
 
 ---
 
-## 설치
+## 실행
 
-Node.js 18.17 이상이 필요합니다. (개발 및 확인은 Node 22에서 했습니다.)
+이 봇은 exe 파일이 아니라 Node.js 프로그램입니다. 실행 진입점은 `index.js` 입니다.
+먼저 [nodejs.org](https://nodejs.org) 에서 **Node.js LTS** 를 설치해 주세요. (18.17 이상이 필요합니다.
+개발과 확인은 Node 22에서 했습니다.)
 
 ```bash
 cd bot
 npm install
-cp .env.example .env
+cp .env.example .env    # 그리고 DISCORD_TOKEN 을 채웁니다
+npm start               # node index.js 와 같습니다
 ```
 
-`.env` 파일을 열어 `DISCORD_TOKEN` 을 채웁니다. 채널과 역할 ID는 요청받은 값이 기본으로 들어 있어
-그대로 두면 됩니다. 바꾸고 싶으면 `.env` 에서 덮어쓰면 됩니다.
+`npm install` 은 처음 한 번만 하면 됩니다. 그 다음부터는 `npm start` 만 하면 켜집니다.
+끌 때는 `Ctrl + C` 를 누르면 됩니다.
+
+채널과 역할 ID는 요청받은 값이 기본으로 들어 있어 그대로 두면 됩니다.
+바꾸고 싶으면 `.env` 에서 덮어쓰면 됩니다.
+
+### 24시간 켜 두려면
+
+창을 닫으면 봇도 꺼집니다. 항상 켜 두려면 PC를 계속 켜 두거나,
+서버 호스팅에 올려서 `pm2` 같은 도구로 실행하는 방법이 있습니다.
 
 ```bash
-npm start
+npm install -g pm2
+pm2 start index.js --name yecheon-bot
+pm2 save
 ```
 
 ## 디스코드 개발자 포털 설정
@@ -130,20 +143,25 @@ npm start
 
 ## 파일 구조
 
+모든 파일은 `bot` 폴더 안에 그대로 들어 있습니다.
+
 ```
 bot/
-  src/
-    index.js                 봇 시작, 상호작용 라우팅, 슬래시 명령 등록
-    config.js                설정값과 티켓 종류 정의
-    features/
-      verification.js        로블록스 인증 (패널, 창, 코드 확인, 별명/역할 처리)
-      tickets.js             티켓 생성과 종료
-      transcript.js          HTML 기록 생성
-    roblox/
-      api.js                 로블록스 API 호출
-      code.js                인증 코드 생성과 대조
-    util/
-      config, embeds, log, panel, store, time
+  index.js            실행 진입점, 상호작용 라우팅, 슬래시 명령 등록
+  config.js           설정값과 티켓 종류 정의
+  verification.js     로블록스 인증 (패널, 창, 코드 확인, 별명/역할 처리)
+  tickets.js          티켓 생성과 종료
+  transcript.js       HTML 기록 생성
+  roblox-api.js       로블록스 API 호출
+  roblox-code.js      인증 코드 생성과 대조
+  embeds.js           임베드 만들기
+  panel.js            패널 게시와 중복 정리
+  store.js            데이터 저장 (티켓 번호, 인증 정보)
+  time.js             한국 시간 서식
+  log.js              로그 출력
+  package.json
+  .env.example
+  README.md
 ```
 
 ## 데이터 저장

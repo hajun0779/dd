@@ -10,7 +10,7 @@ import {
   SlashCommandBuilder,
 } from 'discord.js';
 
-import { config, getMissingOptionalIds, getSharedCategoryTypes, validateConfig } from './config.js';
+import { WORK_FIELDS, config, getMissingOptionalIds, getSharedCategoryTypes, validateConfig } from './config.js';
 import { log } from './log.js';
 import { editPayload, errorPanel, neutralPanel, payload, successPanel } from './components.js';
 
@@ -69,6 +69,9 @@ import {
 } from './payroll.js';
 
 const MANAGE_GUILD = PermissionsBitField.Flags.ManageGuild;
+
+// 분야는 목록에서 고르게 합니다. config.js 의 WORK_FIELDS 를 고치면 목록도 바뀝니다.
+const FIELD_CHOICES = WORK_FIELDS.map((field) => ({ name: field, value: field }));
 
 const COMMANDS = [
   new SlashCommandBuilder()
@@ -200,7 +203,7 @@ const COMMANDS = [
         .setDescription('직원을 분야에 넣습니다. 같은 사람을 다시 넣으면 덮어씁니다.')
         .addUserOption((option) => option.setName('유저').setDescription('직원').setRequired(true))
         .addStringOption((option) =>
-          option.setName('분야').setDescription('분야 이름').setRequired(true).setMaxLength(30),
+          option.setName('분야').setDescription('분야').setRequired(true).addChoices(...FIELD_CHOICES),
         )
         .addStringOption((option) =>
           option.setName('별명').setDescription('목록에 표시할 별명').setRequired(true).setMaxLength(30),
@@ -212,7 +215,7 @@ const COMMANDS = [
         .setDescription('직원을 분야에서 뺍니다.')
         .addUserOption((option) => option.setName('유저').setDescription('직원').setRequired(true))
         .addStringOption((option) =>
-          option.setName('분야').setDescription('분야 이름').setRequired(true).setMaxLength(30),
+          option.setName('분야').setDescription('분야').setRequired(true).addChoices(...FIELD_CHOICES),
         ),
     )
     .addSubcommand((sub) => sub.setName('목록').setDescription('분야별 직원을 봅니다.')),
@@ -223,7 +226,7 @@ const COMMANDS = [
     .setDefaultMemberPermissions(MANAGE_GUILD)
     .setContexts(InteractionContextType.Guild)
     .addStringOption((option) =>
-      option.setName('분야').setDescription('배당할 분야').setRequired(true).setMaxLength(30),
+      option.setName('분야').setDescription('배당할 분야').setRequired(true).addChoices(...FIELD_CHOICES),
     ),
 
   new SlashCommandBuilder()

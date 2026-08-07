@@ -9,7 +9,7 @@ import {
   TextInputStyle,
 } from 'discord.js';
 
-import { config } from './config.js';
+import { WORK_FIELDS, config, isWorkField } from './config.js';
 import { log } from './log.js';
 import { formatKst, formatDuration } from './time.js';
 import { editPayload, errorPanel, neutralPanel, panel, payload, successPanel, warningPanel } from './components.js';
@@ -158,9 +158,18 @@ export async function handleFieldSetupCommand(interaction) {
   const field = interaction.options.getString('분야').trim();
   const nickname = interaction.options.getString('별명').trim();
 
-  if (field.length === 0 || field.length > 30 || nickname.length === 0 || nickname.length > 30) {
+  if (!isWorkField(field)) {
     await interaction.editReply(
-      editPayload(errorPanel('입력이 올바르지 않습니다', '분야와 별명은 1자에서 30자 사이로 적어 주세요.', { footer: FOOTER })),
+      editPayload(
+        errorPanel('없는 분야입니다', `쓸 수 있는 분야: ${WORK_FIELDS.join(', ')}`, { footer: FOOTER }),
+      ),
+    );
+    return;
+  }
+
+  if (nickname.length === 0 || nickname.length > 30) {
+    await interaction.editReply(
+      editPayload(errorPanel('별명이 올바르지 않습니다', '1자에서 30자 사이로 적어 주세요.', { footer: FOOTER })),
     );
     return;
   }
@@ -211,26 +220,12 @@ export async function handleFieldListCommand(interaction) {
     return;
   }
 
-  const byField = new Map();
-  for (const entry of settings.fields) {
-    if (!byField.has(entry.field)) byField.set(entry.field, []);
-    byField.get(entry.field).push(entry);
-  }
-
   await interaction.editReply(
     editPayload(
       panel({
         color: config.colors.neutral,
         title: '분야별 직원',
-        description:
-          byField.size === 0
-            ? '아직 등록된 직원이 없습니다.'
-            : [...byField.entries()]
-                .map(
-                  ([field, entries]) =>
-                    `**${field}**\n${entries.map((e) => `${e.nickname} - <@${e.userId}>`).join('\n')}`,
-                )
-                .join('\n\n'),
+        description: formatFieldList(settings.fields),
         footer: FOOTER,
       }),
     ),
@@ -276,6 +271,22 @@ export async function handleFieldRemoveCommand(interaction) {
   await interaction.editReply(
     editPayload(successPanel('지웠습니다', `${user} 님을 **${field}** 분야에서 뺐습니다.`, { footer: FOOTER })),
   );
+}
+
+/**
+ * 정해진 분야를 전부 보여 줍니다. 아무도 없는 분야는 비어 있다고 적습니다.
+ *
+ * @param {Array<{userId: string, field: string, nickname: string}>} entries
+ */
+export function formatFieldList(entries) {
+  return WORK_FIELDS.map((field) => {
+    const members = entries.filter((entry) => entry.field === field);
+    const body =
+      members.length > 0
+        ? members.map((entry) => `${entry.nickname} - <@${entry.userId}>`).join('\n')
+        : '비어 있음';
+    return `**${field}**\n${body}`;
+  }).join('\n\n');
 }
 
 // --- 배당 시작 ---

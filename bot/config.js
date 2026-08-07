@@ -144,6 +144,40 @@ export const config = {
   timezone: 'Asia/Seoul',
 };
 
+// ===========================================================================
+//  업무 분야 목록
+//
+//  /분야설정 과 /배당 에서 고를 수 있는 분야입니다.
+//  줄을 더하거나 지우면 그대로 반영됩니다. (디스코드 제한으로 최대 25개)
+//  .env 의 WORK_FIELDS 에 쉼표로 적어도 됩니다. 예: WORK_FIELDS=GUI,VFX,Builder
+// ===========================================================================
+const DEFAULT_WORK_FIELDS = [
+  'Scripter',
+  'Builder',
+  'Graphic',
+  'Modeler',
+  'Animator',
+  'Programmer',
+  'Clothing',
+  'GUI',
+  'Sound',
+  'VFX',
+];
+
+export const WORK_FIELDS = (() => {
+  const raw = str('WORK_FIELDS', null);
+  const list = raw
+    ? raw.split(',').map((item) => item.trim()).filter((item) => item.length > 0)
+    : DEFAULT_WORK_FIELDS;
+
+  // 중복을 없애고 25개까지만 씁니다.
+  return [...new Set(list)].slice(0, 25);
+})();
+
+export function isWorkField(value) {
+  return WORK_FIELDS.includes(value);
+}
+
 // 문의 종류마다 카테고리가 따로 있습니다.
 // 제품 문의와 파트너 문의 카테고리 ID 를 아직 넣지 않았다면 통합 문의 카테고리를 대신 씁니다.
 const GENERAL_CATEGORY_ID = str('TICKET_CATEGORY_GENERAL', '1535141065160658944');

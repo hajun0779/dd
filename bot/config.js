@@ -95,6 +95,10 @@ export const config = {
   // 총관리자 역할. 모든 명령을 쓸 수 있고, 모든 보고를 DM 으로 받습니다.
   adminRoleId: str('ADMIN_ROLE_ID', null),
 
+  // 직원 명단이 계속 올라가 있을 채널과 갱신 주기(분)
+  staffListChannelId: str('STAFF_LIST_CHANNEL_ID', '1535253952197697536'),
+  staffListRefreshMinutes: int('STAFF_LIST_REFRESH_MINUTES', 60),
+
   // 업무 배당
   assignListChannelId: str('ASSIGN_LIST_CHANNEL_ID', null),
   assignStatusChannelId: str('ASSIGN_STATUS_CHANNEL_ID', null),
@@ -142,6 +146,9 @@ export const config = {
   },
 
   timezone: 'Asia/Seoul',
+  // 한국 시간은 UTC 보다 9시간 빠르고 서머타임이 없습니다.
+  // Node 가 전체 ICU 없이 설치된 곳에서도 어긋나지 않도록 직접 더해서 씁니다.
+  timezoneOffsetHours: int('TIMEZONE_OFFSET_HOURS', 9),
 };
 
 // ===========================================================================

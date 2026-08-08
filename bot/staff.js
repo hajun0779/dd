@@ -1,5 +1,6 @@
 import { config } from './config.js';
 import { log } from './log.js';
+import { formatKst } from './time.js';
 import { editPayload, errorPanel, neutralPanel, panel, payload, successPanel } from './components.js';
 import { readSettings, writeSettings, StorageError } from './storage.js';
 
@@ -85,6 +86,76 @@ export async function handleStaffListCommand(interaction) {
   await interaction.channel
     ?.send({ ...payload(container), allowedMentions: { parse: [] } })
     .catch((error) => log.error('직원 명단 게시 실패', error?.message ?? error));
+}
+
+// --- 자동 갱신 ---
+
+/**
+ * 직원 명단 채널에 명단을 하나만 두고 계속 고쳐 씁니다.
+ * 새로 올리지 않고 같은 메시지를 수정하므로 채널이 지저분해지지 않습니다.
+ */
+export async function refreshStaffBoard(client) {
+  if (!config.staffListChannelId) return;
+
+  const channel = await client.channels.fetch(config.staffListChannelId).catch(() => null);
+  if (!channel?.isTextBased() || !channel.guild) {
+    log.warn(`직원 명단 채널(${config.staffListChannelId})을 찾지 못했습니다.`);
+    return;
+  }
+
+  let settings;
+  try {
+    settings = await readSettings(client);
+  } catch (error) {
+    log.debug('직원 명단을 갱신하지 못했습니다.', error?.message ?? error);
+    return;
+  }
+
+  const entries = settings.staffRoles;
+
+  // 역할에 속한 사람을 세려면 서버 인원 정보를 한 번 받아와야 합니다.
+  await channel.guild.members.fetch().catch((error) => {
+    log.warn('서버 인원 정보를 받아오지 못했습니다. SERVER MEMBERS INTENT 를 확인해 주세요.', error?.message ?? error);
+  });
+
+  const container = panel({
+    color: config.colors.primary,
+    title: '직원 명단',
+    description:
+      entries.length === 0
+        ? '아직 등록된 직책이 없습니다.'
+        : formatStaffList(entries, (roleId) => {
+            const role = channel.guild.roles.cache.get(roleId);
+            return role ? [...role.members.keys()] : [];
+          }),
+    fields: [{ name: '갱신 시각', value: formatKst(Date.now()) }],
+    footer: `${config.brandName} 직원 명단`,
+  });
+
+  const recent = await channel.messages.fetch({ limit: 50 }).catch(() => null);
+  const board = recent?.find((message) => message.author?.id === client.user.id) ?? null;
+
+  try {
+    if (board) await board.edit(editPayload(container));
+    else await channel.send({ ...payload(container), allowedMentions: { parse: [] } });
+  } catch (error) {
+    log.error('직원 명단 갱신 실패', error?.message ?? error);
+  }
+}
+
+/** 봇이 켜질 때 한 번 올리고, 그 뒤로 정해진 주기마다 고쳐 씁니다. */
+export function startStaffBoardRefresh(client) {
+  const minutes = Math.max(5, config.staffListRefreshMinutes);
+
+  const run = () => {
+    refreshStaffBoard(client).catch((error) =>
+      log.error('직원 명단 갱신 실패', error?.message ?? error),
+    );
+  };
+
+  run();
+  setInterval(run, minutes * 60_000).unref();
+  log.info(`직원 명단을 ${minutes}분마다 갱신합니다.`);
 }
 
 // --- 설정 ---

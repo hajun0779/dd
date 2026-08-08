@@ -12,6 +12,7 @@ import {
 
 import { WORK_FIELDS, config, getMissingOptionalIds, getSharedCategoryTypes, validateConfig } from './config.js';
 import { log } from './log.js';
+import { formatBusinessHours, formatKst, isBusinessHours } from './time.js';
 import { editPayload, errorPanel, neutralPanel, payload, successPanel } from './components.js';
 
 import {
@@ -25,7 +26,7 @@ import {
 } from './tickets.js';
 
 import { handleTermsCommand } from './terms.js';
-import { handleStaffListCommand, handleStaffSetupCommand } from './staff.js';
+import { handleStaffListCommand, handleStaffSetupCommand, startStaffBoardRefresh } from './staff.js';
 import { handlePartnershipCommand } from './partnership.js';
 import { REVIEW_IDS, handleReviewPick, handleReviewSubmit } from './reviews.js';
 import {
@@ -309,6 +310,10 @@ client.once(Events.ClientReady, async () => {
 
   await refreshWarningBoard(client).catch(() => {});
 
+  // 직원 명단 채널을 주기적으로 갱신합니다.
+  startStaffBoardRefresh(client);
+
+  log.info(`지금 한국 시간: ${formatKst(Date.now())} / 문의 시간: ${formatBusinessHours()} (${isBusinessHours() ? '지금 문의 시간 안' : '지금 문의 시간 밖'})`);
   log.info('봇 준비가 끝났습니다.');
 });
 

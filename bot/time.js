@@ -1,71 +1,58 @@
 import { config } from './config.js';
 
-const dateTimeFormatter = new Intl.DateTimeFormat('ko-KR', {
-  timeZone: config.timezone,
-  year: 'numeric',
-  month: '2-digit',
-  day: '2-digit',
-  hour: '2-digit',
-  minute: '2-digit',
-  second: '2-digit',
-  hour12: false,
-});
+/**
+ * 시간은 Intl 에 기대지 않고 직접 계산합니다.
+ *
+ * 호스팅에 따라 Node 가 전체 ICU 없이 설치되어 있으면
+ * Intl 에 Asia/Seoul 을 넣어도 무시되고 UTC 로 처리됩니다.
+ * 그러면 낮 12시가 새벽 3시로 읽혀서 문의 시간 판정이 어긋납니다.
+ * 한국은 서머타임이 없어 UTC 에 9시간만 더하면 정확하므로 그렇게 계산합니다.
+ */
 
-const shortFormatter = new Intl.DateTimeFormat('ko-KR', {
-  timeZone: config.timezone,
-  month: '2-digit',
-  day: '2-digit',
-  hour: '2-digit',
-  minute: '2-digit',
-  hour12: false,
-});
+const OFFSET_MS = config.timezoneOffsetHours * 3600_000;
 
-const timeOnlyFormatter = new Intl.DateTimeFormat('ko-KR', {
-  timeZone: config.timezone,
-  hour: '2-digit',
-  minute: '2-digit',
-  hour12: false,
-});
-
-const businessFormatter = new Intl.DateTimeFormat('en-US', {
-  timeZone: config.timezone,
-  weekday: 'short',
-  hour: '2-digit',
-  minute: '2-digit',
-  hour12: false,
-});
-
-const WEEKDAY_INDEX = { Sun: 0, Mon: 1, Tue: 2, Wed: 3, Thu: 4, Fri: 5, Sat: 6 };
 const WEEKDAY_LABEL = ['일', '월', '화', '수', '목', '금', '토'];
 
-function normalize(parts) {
-  const map = {};
-  for (const part of parts) map[part.type] = part.value;
-  return map;
+function pad(value, length = 2) {
+  return String(value).padStart(length, '0');
+}
+
+/** 한국 시간 기준의 연월일시분초와 요일을 뽑아냅니다. */
+export function kstParts(input = Date.now()) {
+  const date = input instanceof Date ? input : new Date(input);
+  if (Number.isNaN(date.getTime())) return null;
+
+  const shifted = new Date(date.getTime() + OFFSET_MS);
+  return {
+    year: shifted.getUTCFullYear(),
+    month: shifted.getUTCMonth() + 1,
+    day: shifted.getUTCDate(),
+    hour: shifted.getUTCHours(),
+    minute: shifted.getUTCMinutes(),
+    second: shifted.getUTCSeconds(),
+    weekday: shifted.getUTCDay(),
+  };
 }
 
 /** 2026-08-07 14:03:22 (KST) 형식 문자열을 반환합니다. */
 export function formatKst(input) {
-  const date = input instanceof Date ? input : new Date(input);
-  if (Number.isNaN(date.getTime())) return '알 수 없음';
-  const p = normalize(dateTimeFormatter.formatToParts(date));
-  return `${p.year}-${p.month}-${p.day} ${p.hour}:${p.minute}:${p.second} (KST)`;
+  const p = kstParts(input);
+  if (!p) return '알 수 없음';
+  return `${p.year}-${pad(p.month)}-${pad(p.day)} ${pad(p.hour)}:${pad(p.minute)}:${pad(p.second)} (KST)`;
 }
 
 /** 08-07 14:03 형식의 짧은 문자열을 반환합니다. */
 export function formatKstShort(input) {
-  const date = input instanceof Date ? input : new Date(input);
-  if (Number.isNaN(date.getTime())) return '알 수 없음';
-  const p = normalize(shortFormatter.formatToParts(date));
-  return `${p.month}-${p.day} ${p.hour}:${p.minute}`;
+  const p = kstParts(input);
+  if (!p) return '알 수 없음';
+  return `${pad(p.month)}-${pad(p.day)} ${pad(p.hour)}:${pad(p.minute)}`;
 }
 
 /** 14:03 형식의 시각만 반환합니다. */
 export function formatKstTime(input) {
-  const date = input instanceof Date ? input : new Date(input);
-  if (Number.isNaN(date.getTime())) return '';
-  const p = normalize(timeOnlyFormatter.formatToParts(date));
-  return `${p.hour}:${p.minute}`;
+  const p = kstParts(input);
+  if (!p) return '';
+  return `${pad(p.hour)}:${pad(p.minute)}`;
 }
 
 /** 밀리초 간격을 한국어 문자열로 변환합니다. */
@@ -93,16 +80,11 @@ export function sleep(ms) {
 
 /** 지금이 문의 받는 시간인지 확인합니다. 한국 시간 기준입니다. */
 export function isBusinessHours(input = Date.now()) {
-  const date = input instanceof Date ? input : new Date(input);
-  if (Number.isNaN(date.getTime())) return false;
+  const p = kstParts(input);
+  if (!p) return false;
+  if (!config.business.days.includes(p.weekday)) return false;
 
-  const p = normalize(businessFormatter.formatToParts(date));
-  const day = WEEKDAY_INDEX[p.weekday];
-  if (day === undefined) return false;
-  if (!config.business.days.includes(day)) return false;
-
-  const hour = Number(p.hour) % 24;
-  const minutes = hour * 60 + Number(p.minute);
+  const minutes = p.hour * 60 + p.minute;
   return minutes >= config.business.startHour * 60 && minutes < config.business.endHour * 60;
 }
 
@@ -111,7 +93,7 @@ export function formatHour12(hour) {
   const value = ((Number(hour) % 24) + 24) % 24;
   const period = value < 12 ? 'AM' : 'PM';
   const display = value % 12 === 0 ? 12 : value % 12;
-  return `${period} ${String(display).padStart(2, '0')}:00`;
+  return `${period} ${pad(display)}:00`;
 }
 
 /** 평일 AM 11:00 ~ PM 06:00 형태의 안내 문구를 만듭니다. */

@@ -6,15 +6,38 @@ import { log } from './log.js';
  * 보관 채널에 봇이 올린 메시지를 읽고 고치는 방식이라 봇을 옮겨도 그대로 남습니다.
  */
 
-const SETTINGS_MARKER = 'ROSTATION_SETTINGS_V1';
-const PRODUCT_MARKER = 'ROSTATION_PRODUCT_V1';
+const SETTINGS_MARKER = 'BOT_SETTINGS_V1';
+const PRODUCT_MARKER = 'BOT_PRODUCT_V1';
 const CACHE_MS = 20_000;
 
 export const MARKERS = {
-  assignment: 'ROSTATION_ASSIGN_V1',
-  payroll: 'ROSTATION_PAYROLL_V1',
-  warningBoard: 'ROSTATION_WARNBOARD_V1',
+  assignment: 'BOT_ASSIGN_V1',
+  payroll: 'BOT_PAYROLL_V1',
+  warningBoard: 'BOT_WARNBOARD_V1',
 };
+
+/**
+ * 예전에 쓰던 표시입니다.
+ * 이름을 바꾸기 전에 저장해 둔 메시지도 그대로 읽을 수 있도록 남겨 둡니다.
+ * 새로 저장할 때는 위의 새 표시만 씁니다.
+ */
+const LEGACY_MARKERS = {
+  [SETTINGS_MARKER]: ['ROSTATION_SETTINGS_V1'],
+  [PRODUCT_MARKER]: ['ROSTATION_PRODUCT_V1'],
+  [MARKERS.assignment]: ['ROSTATION_ASSIGN_V1'],
+  [MARKERS.payroll]: ['ROSTATION_PAYROLL_V1'],
+  [MARKERS.warningBoard]: ['ROSTATION_WARNBOARD_V1'],
+};
+
+/** 새 표시와 예전 표시를 모두 확인합니다. */
+function markersFor(marker) {
+  return [marker, ...(LEGACY_MARKERS[marker] ?? [])];
+}
+
+/** 메시지가 이 종류의 기록인지 확인합니다. */
+function hasMarker(content, marker) {
+  return typeof content === 'string' && markersFor(marker).some((item) => content.includes(item));
+}
 
 const DEFAULT_SETTINGS = {
   // 직원 명단에 쓰는 역할 목록
@@ -45,15 +68,23 @@ function wrap(marker, data) {
 }
 
 function unwrap(marker, content) {
-  if (typeof content !== 'string' || !content.includes(marker)) return null;
-  const start = content.indexOf(marker) + marker.length;
-  const end = content.lastIndexOf('```');
-  if (end <= start) return null;
-  try {
-    return JSON.parse(content.slice(start, end).trim());
-  } catch {
-    return null;
+  if (typeof content !== 'string') return null;
+
+  for (const item of markersFor(marker)) {
+    if (!content.includes(item)) continue;
+
+    const start = content.indexOf(item) + item.length;
+    const end = content.lastIndexOf('```');
+    if (end <= start) continue;
+
+    try {
+      return JSON.parse(content.slice(start, end).trim());
+    } catch {
+      // 다음 표시로 계속 확인합니다.
+    }
   }
+
+  return null;
 }
 
 // --- 설정 ---
@@ -63,7 +94,7 @@ async function findSettingsMessage(channel, client) {
   if (!recent) return null;
   return (
     recent.find(
-      (message) => message.author?.id === client.user.id && message.content.includes(SETTINGS_MARKER),
+      (message) => message.author?.id === client.user.id && hasMarker(message.content, SETTINGS_MARKER),
     ) ?? null
   );
 }

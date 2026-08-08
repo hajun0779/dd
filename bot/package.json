@@ -1,8 +1,8 @@
 {
-  "name": "rostation-ticket-bot",
+  "name": "defense-logistics-bot",
   "version": "1.0.0",
   "private": true,
-  "description": "Discord ticket system bot with HTML transcripts (Components V2)",
+  "description": "Discord bot for tickets, reviews, products, work assignment and payroll",
   "type": "module",
   "main": "index.js",
   "engines": {

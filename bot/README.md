@@ -1,4 +1,4 @@
-# RoStation 봇
+# 국방군수지원처 봇
 
 Node.js(discord.js v14)로 만든 디스코드 봇입니다.
 문의, 후기, 제품 전달, 안내, 업무 배당, 급여를 담당합니다.
@@ -7,7 +7,7 @@ Node.js(discord.js v14)로 만든 디스코드 봇입니다.
 제목, 본문, 구분선, 이미지, 버튼, 드롭다운, 꼬리말이 전부 한 상자 안에 들어갑니다.
 (클래식 임베드는 버튼을 안에 넣을 수 없고 항상 임베드 바깥 아래에 붙습니다.)
 봇이 만들어내는 문구에는 이모티콘을 쓰지 않습니다.
-모든 컨테이너 맨 아래에는 `Copyright 2026. RoStation. All rights reserved.` 가 붙습니다.
+모든 컨테이너 맨 아래에는 `Copyright 2026. 국방군수지원처. All rights reserved.` 가 붙습니다.
 
 ---
 
@@ -177,7 +177,7 @@ TypeError: Cannot read properties of undefined (reading 'fileExists')
 
 ```bash
 npm install -g pm2
-pm2 start index.js --name rostation-bot
+pm2 start index.js --name defense-logistics-bot
 pm2 save
 ```
 
@@ -435,7 +435,7 @@ Programmer Clothing  GUI       Sound     VFX
 | 이름 | 설명 |
 | --- | --- |
 | `DISCORD_TOKEN` | 봇 토큰. 넣으면 config.js 의 BOT_TOKEN 보다 우선합니다. |
-| `BRAND_NAME` | 컨테이너 꼬리말에 들어갈 이름 (RoStation) |
+| `BRAND_NAME` | 컨테이너 꼬리말에 들어갈 이름 (국방군수지원처) |
 | `COPYRIGHT_YEAR` | 저작권 문구의 연도 (2026) |
 | `COPYRIGHT_TEXT` | 저작권 문구 전체를 직접 적고 싶을 때 |
 | `ADMIN_ROLE_ID` | 총관리자 역할 (없음) |

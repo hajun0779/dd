@@ -76,12 +76,12 @@ export const config = {
   token: str('DISCORD_TOKEN', BOT_TOKEN.trim().length > 0 ? BOT_TOKEN.trim() : null),
 
   // 컨테이너 맨 아래 작은 글씨에 들어갈 이름
-  brandName: str('BRAND_NAME', 'RoStation'),
+  brandName: str('BRAND_NAME', '국방군수지원처'),
 
   // 모든 컨테이너 맨 아래에 붙는 저작권 문구
   copyrightText: str(
     'COPYRIGHT_TEXT',
-    `Copyright ${str('COPYRIGHT_YEAR', '2026')}. ${str('BRAND_NAME', 'RoStation')}. All rights reserved.`,
+    `Copyright ${str('COPYRIGHT_YEAR', '2026')}. ${str('BRAND_NAME', '국방군수지원처')}. All rights reserved.`,
   ),
 
   // 티켓

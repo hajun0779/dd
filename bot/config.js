@@ -139,6 +139,11 @@ export const config = {
   // 후기가 올라갈 채널
   reviewChannelId: str('REVIEW_CHANNEL_ID', null),
 
+  // A/S 조건. /수리약관 글에 그대로 들어갑니다.
+  // 전달이 끝난 뒤 몇 시간 안에 맡길 수 있는지, 무상으로 몇 번까지 되는지
+  repairHours: int('REPAIR_HOURS', 24),
+  repairFreeCount: int('REPAIR_FREE_COUNT', 2),
+
   // 봇이 설정과 제품 파일을 보관할 채널. 스태프만 보이게 만들어 주세요.
   storageChannelId: str('STORAGE_CHANNEL_ID', null),
 

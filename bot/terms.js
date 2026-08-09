@@ -56,6 +56,56 @@ const TERMS = [
   },
 ];
 
+// ===========================================================================
+//  A/S 이용약관 내용
+//
+//  아래 항목을 고치면 /수리약관 으로 나가는 글이 바뀝니다.
+//  기간과 횟수는 .env 의 REPAIR_HOURS, REPAIR_FREE_COUNT 로도 바꿀 수 있습니다.
+// ===========================================================================
+const REPAIR_TERMS = [
+  {
+    name: '제1조 (목적)',
+    value: `이 약관은 ${config.brandName} 가 전달한 제품의 A/S 조건을 정합니다.`,
+  },
+  {
+    name: '제2조 (수리 기간)',
+    value: [
+      `제작이 끝나고 전달이 끝난 시점부터 ${config.repairHours}시간 안에 수리를 맡길 수 있습니다.`,
+      `${config.repairHours}시간이 지나면 무상 수리 대상이 아닙니다.`,
+    ].join('\n'),
+  },
+  {
+    name: '제3조 (횟수)',
+    value: `무상 수리는 인당 최대 ${config.repairFreeCount}회까지 가능합니다.`,
+  },
+  {
+    name: '제4조 (비용)',
+    value: [
+      `${config.repairHours}시간이 지났거나 ${config.repairFreeCount}회를 모두 쓴 뒤에는 약간의 비용을 부담해야 합니다.`,
+      '비용은 수리 내용에 따라 접수할 때 따로 안내합니다.',
+    ].join('\n'),
+  },
+  {
+    name: '제5조 (접수)',
+    value: [
+      '수리는 문의 채널로 접수합니다.',
+      '어떤 문제인지 적어 주시면 확인 후 진행합니다.',
+    ].join('\n'),
+  },
+  {
+    name: '제6조 (범위)',
+    value: [
+      '전달한 제품 자체의 오류를 고치는 것이 A/S 입니다.',
+      '새 기능 추가나 처음에 요청하지 않았던 내용의 변경은 A/S 가 아니라 새 작업으로 봅니다.',
+      '이용자가 직접 수정한 뒤 생긴 문제는 무상 수리 대상이 아닙니다.',
+    ].join('\n'),
+  },
+  {
+    name: '제7조 (약관 변경)',
+    value: '약관이 바뀌면 공지 후 적용합니다.',
+  },
+];
+
 export function buildTermsPayload() {
   const container = panel({
     color: config.colors.primary,
@@ -71,4 +121,20 @@ export function buildTermsPayload() {
 export async function handleTermsCommand(interaction) {
   // 명령을 쓴 채널에 그대로 올립니다.
   await interaction.reply(buildTermsPayload());
+}
+
+export function buildRepairTermsPayload() {
+  const container = panel({
+    color: config.colors.primary,
+    title: 'A/S 이용약관',
+    description: '수리를 맡기기 전에 아래 내용을 확인해 주세요.',
+    fields: REPAIR_TERMS,
+    footer: `${config.brandName} A/S`,
+  });
+
+  return payload(container);
+}
+
+export async function handleRepairTermsCommand(interaction) {
+  await interaction.reply(buildRepairTermsPayload());
 }

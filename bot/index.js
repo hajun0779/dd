@@ -25,7 +25,7 @@ import {
   isTicketCustomId,
 } from './tickets.js';
 
-import { handleTermsCommand } from './terms.js';
+import { handleRepairTermsCommand, handleTermsCommand } from './terms.js';
 import { handleMemberJoin, prepareWelcomeImage } from './welcome.js';
 import {
   handleInviteCodeCommand,
@@ -112,6 +112,12 @@ const COMMANDS = [
   new SlashCommandBuilder()
     .setName('이용약관')
     .setDescription('이 채널에 이용약관을 올립니다.')
+    .setDefaultMemberPermissions(MANAGE_GUILD)
+    .setContexts(InteractionContextType.Guild),
+
+  new SlashCommandBuilder()
+    .setName('수리약관')
+    .setDescription('이 채널에 A/S 이용약관을 올립니다.')
     .setDefaultMemberPermissions(MANAGE_GUILD)
     .setContexts(InteractionContextType.Guild),
 
@@ -452,6 +458,10 @@ async function handleCommand(interaction) {
 
     case '이용약관':
       await handleTermsCommand(interaction);
+      return;
+
+    case '수리약관':
+      await handleRepairTermsCommand(interaction);
       return;
 
     case '직원명단':

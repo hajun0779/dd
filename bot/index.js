@@ -27,6 +27,14 @@ import {
 
 import { handleTermsCommand } from './terms.js';
 import { handleMemberJoin, prepareWelcomeImage } from './welcome.js';
+import {
+  handleInviteCodeCommand,
+  handleInviteCreate,
+  handleInviteDelete,
+  logInviteJoin,
+  primeInvites,
+  syncGuild,
+} from './invites.js';
 import { handleStaffListCommand, handleStaffSetupCommand, startStaffBoardRefresh } from './staff.js';
 import { handlePartnershipCommand } from './partnership.js';
 import { REVIEW_IDS, handleReviewPick, handleReviewSubmit } from './reviews.js';
@@ -80,6 +88,11 @@ const COMMANDS = [
     .setName('티켓패널')
     .setDescription('문의 패널을 다시 게시합니다.')
     .setDefaultMemberPermissions(MANAGE_GUILD)
+    .setContexts(InteractionContextType.Guild),
+
+  new SlashCommandBuilder()
+    .setName('초대코드')
+    .setDescription('내 초대 코드를 만들고, 그 코드로 들어온 사람 수를 봅니다.')
     .setContexts(InteractionContextType.Guild),
 
   new SlashCommandBuilder()
@@ -258,6 +271,8 @@ const client = new Client({
     GatewayIntentBits.GuildMembers,
     GatewayIntentBits.GuildMessages,
     GatewayIntentBits.MessageContent,
+    // /초대코드 로 만든 초대가 언제 생기고 사라지는지 따라가는 데 필요합니다.
+    GatewayIntentBits.GuildInvites,
     // 후기와 제품 받기 버튼이 DM 에서 눌립니다.
     GatewayIntentBits.DirectMessages,
   ],
@@ -314,6 +329,11 @@ client.once(Events.ClientReady, async () => {
   // 직원 명단 채널을 주기적으로 갱신합니다.
   startStaffBoardRefresh(client);
 
+  // 초대 사용 횟수를 미리 읽어 둡니다. 이게 있어야 누구 초대로 들어왔는지 알 수 있습니다.
+  await primeInvites(client).catch((error) =>
+    log.warn('초대 목록을 읽지 못했습니다.', error?.message ?? error),
+  );
+
   // 환영 그림을 미리 받아 둡니다. 주소가 만료돼도 계속 쓸 수 있도록 파일로 들고 있습니다.
   await prepareWelcomeImage(client).catch((error) =>
     log.warn('환영 그림 준비 실패', error?.message ?? error),
@@ -326,17 +346,30 @@ client.once(Events.ClientReady, async () => {
 client.on(Events.GuildCreate, async (guild) => {
   log.info(`새 서버에 참여했습니다: ${guild.name} (${guild.id})`);
   await registerCommands();
+  await syncGuild(guild).catch(() => {});
 });
 
 // --- 서버에 들어온 사람 맞이하기 ---
 
 client.on(Events.GuildMemberAdd, async (member) => {
+  // 초대 확인이 먼저입니다. 늦으면 다른 사람이 들어와 횟수가 섞입니다.
+  try {
+    await logInviteJoin(member);
+  } catch (error) {
+    log.error('초대 기록 처리 중 오류', error?.stack ?? error);
+  }
+
   try {
     await handleMemberJoin(member);
   } catch (error) {
     log.error('환영 메시지 처리 중 오류', error?.stack ?? error);
   }
 });
+
+// --- 초대 목록 따라가기 ---
+
+client.on(Events.InviteCreate, (invite) => handleInviteCreate(invite));
+client.on(Events.InviteDelete, (invite) => handleInviteDelete(invite));
 
 // --- 상호작용 처리 ---
 
@@ -394,6 +427,10 @@ async function handleCommand(interaction) {
       );
       return;
     }
+
+    case '초대코드':
+      await handleInviteCodeCommand(interaction);
+      return;
 
     case '이용약관':
       await handleTermsCommand(interaction);

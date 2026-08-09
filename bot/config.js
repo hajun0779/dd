@@ -121,6 +121,11 @@ export const config = {
   // 봇이 들어왔을 때도 맞이할지 여부
   welcomeSkipBots: bool('WELCOME_SKIP_BOTS', true),
 
+  // /초대코드 로 만드는 초대가 가리킬 채널. 비우면 환영 채널, 그것도 없으면 명령을 쓴 채널
+  inviteChannelId: str('INVITE_CHANNEL_ID', null),
+  // 누가 누구 초대로 들어왔는지 올라갈 채널. 비우면 만든 사람에게 DM 만 갑니다.
+  inviteLogChannelId: str('INVITE_LOG_CHANNEL_ID', null),
+
   // 업무 배당
   assignListChannelId: str('ASSIGN_LIST_CHANNEL_ID', null),
   assignStatusChannelId: str('ASSIGN_STATUS_CHANNEL_ID', null),

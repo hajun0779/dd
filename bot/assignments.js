@@ -28,6 +28,32 @@ import {
 const FOOTER = `${config.brandName} 업무 배당`;
 const MIN_REJECT_REASON = 10;
 
+/**
+ * 배당과 수리는 흐름이 같고 문구만 다릅니다.
+ * 기록에 kind 를 넣어 두고, 화면에 나갈 말만 여기서 갈라 씁니다.
+ * 그래서 수락, 거절, 기간 조정, 연장, 기간 지남 처리는 둘이 그대로 같이 씁니다.
+ */
+const KINDS = {
+  assign: {
+    listTitle: '배당 목록',
+    offerTitle: '해당 프로젝트를 맡으시겠습니까?',
+    accept: '배당 수락',
+    reject: '배당 거절',
+    footer: `${config.brandName} 업무 배당`,
+  },
+  repair: {
+    listTitle: '수리 목록',
+    offerTitle: '해당 수리를 맡으시겠습니까?',
+    accept: '수리 수락',
+    reject: '수리 거절',
+    footer: `${config.brandName} 수리`,
+  },
+};
+
+function labels(record) {
+  return KINDS[record?.kind === 'repair' ? 'repair' : 'assign'];
+}
+
 export const ASSIGN_IDS = {
   pick: 'assign:pick',
   newForm: 'assign:new',
@@ -41,6 +67,8 @@ export const ASSIGN_IDS = {
   adjustReject: 'assign:adjustno',
   adjustRejectForm: 'assign:adjustnoform',
   extend: 'assign:extend',
+  repairPick: 'assign:rpick',
+  repairForm: 'assign:rnew',
 };
 
 const STATUS_LABEL = {
@@ -476,43 +504,293 @@ export async function handleAssignCreate(interaction) {
   );
 }
 
+// --- 수리 ---
+//
+// /수리 는 /배당 과 흐름이 같습니다.
+// 이미 배당한 기록을 골라서 그 프로젝트의 수리를 다시 맡기는 것이라,
+// 만들어지는 기록도 같은 자리에 kind: 'repair' 로 저장합니다.
+// 그래서 수락, 거절, 기간 조정, 연장, 기간 지남 처리가 그대로 이어집니다.
+
+/** /수리 의 프로젝트 칸에서 이미 배당한 업무를 골라 줍니다. */
+export async function handleRepairAutocomplete(interaction) {
+  const focused = String(interaction.options.getFocused() ?? '').toLowerCase();
+
+  let records = [];
+  try {
+    records = await listRecords(interaction.client, MARKERS.assignment);
+  } catch {
+    records = [];
+  }
+
+  const matches = records
+    .filter((record) => record.kind !== 'repair')
+    .filter((record) => record.guildId === interaction.guildId)
+    .filter((record) => String(record.title ?? '').toLowerCase().includes(focused))
+    .reverse()
+    .slice(0, 25)
+    .map((record) => ({
+      name: `${record.title}`.slice(0, 100),
+      value: record.id,
+    }));
+
+  await interaction.respond(matches).catch(() => {});
+}
+
+export async function handleRepairCommand(interaction) {
+  await interaction.reply(
+    payload(neutralPanel('잠시만 기다려 주세요', '직원 목록을 불러오고 있습니다.', { footer: KINDS.repair.footer }), {
+      ephemeral: true,
+    }),
+  );
+
+  if (!isAdmin(interaction.member)) {
+    await interaction.editReply(editPayload(deniedPanel()));
+    return;
+  }
+
+  const projectId = interaction.options.getString('프로젝트').trim();
+  const field = interaction.options.getString('분야').trim();
+
+  let settings;
+  let source;
+  try {
+    settings = await readSettings(interaction.client);
+    source = await getRecord(interaction.client, MARKERS.assignment, projectId);
+  } catch (error) {
+    await interaction.editReply(editPayload(storageErrorPanel(error)));
+    return;
+  }
+
+  if (!source) {
+    await interaction.editReply(
+      editPayload(
+        errorPanel(
+          '프로젝트를 찾지 못했습니다',
+          '목록에서 배당한 프로젝트를 골라 주세요.',
+          { footer: KINDS.repair.footer },
+        ),
+      ),
+    );
+    return;
+  }
+
+  const entries = settings.fields.filter((entry) => entry.field === field).slice(0, 25);
+
+  if (entries.length === 0) {
+    await interaction.editReply(
+      editPayload(
+        errorPanel(
+          '직원이 없습니다',
+          `**${field}** 분야에 등록된 직원이 없습니다.\n\`/분야설정\` 으로 먼저 등록해 주세요.`,
+          { footer: KINDS.repair.footer },
+        ),
+      ),
+    );
+    return;
+  }
+
+  const menu = new StringSelectMenuBuilder()
+    .setCustomId(`${ASSIGN_IDS.repairPick}:${source.id}`)
+    .setPlaceholder('수리를 맡길 직원을 선택해 주세요')
+    .setMinValues(1)
+    .setMaxValues(1)
+    .addOptions(
+      entries.map((entry) => ({
+        label: entry.nickname.slice(0, 100),
+        value: entry.userId,
+        description: `${entry.field}`.slice(0, 100),
+      })),
+    );
+
+  await interaction.editReply(
+    editPayload(
+      panel({
+        color: config.colors.primary,
+        title: '수리',
+        description: `**${source.title}** 의 수리입니다.\n**${field}** 분야에서 맡길 직원을 선택해 주세요.`,
+        buttons: [menu],
+        footer: KINDS.repair.footer,
+      }),
+    ),
+  );
+}
+
+export async function handleRepairPick(interaction) {
+  const sourceId = interaction.customId.slice(`${ASSIGN_IDS.repairPick}:`.length);
+  const userId = interaction.values?.[0];
+
+  const modal = new ModalBuilder()
+    .setCustomId(`${ASSIGN_IDS.repairForm}:${sourceId}:${userId}`)
+    .setTitle('수리');
+
+  modal.addComponents(
+    new ActionRowBuilder().addComponents(
+      new TextInputBuilder()
+        .setCustomId('title')
+        .setLabel('수리 항목')
+        .setPlaceholder('예: 상점 스크립트 오류')
+        .setStyle(TextInputStyle.Short)
+        .setMaxLength(80)
+        .setRequired(true),
+    ),
+    new ActionRowBuilder().addComponents(
+      new TextInputBuilder()
+        .setCustomId('description')
+        .setLabel('수리 내용')
+        .setStyle(TextInputStyle.Paragraph)
+        .setMaxLength(900)
+        .setRequired(true),
+    ),
+    new ActionRowBuilder().addComponents(
+      new TextInputBuilder()
+        .setCustomId('pay')
+        .setLabel('급여')
+        .setPlaceholder('예: 무료 또는 30,000원')
+        .setStyle(TextInputStyle.Short)
+        .setMaxLength(40)
+        .setRequired(true),
+    ),
+  );
+
+  await interaction.showModal(modal);
+}
+
+export async function handleRepairCreate(interaction) {
+  const rest = interaction.customId.slice(`${ASSIGN_IDS.repairForm}:`.length);
+  const separator = rest.lastIndexOf(':');
+  const sourceId = rest.slice(0, separator);
+  const userId = rest.slice(separator + 1);
+
+  await interaction.reply(
+    payload(neutralPanel('잠시만 기다려 주세요', '수리를 등록하고 있습니다.', { footer: KINDS.repair.footer }), {
+      ephemeral: true,
+    }),
+  );
+
+  const title = interaction.fields.getTextInputValue('title').trim();
+  const description = interaction.fields.getTextInputValue('description').trim();
+  const pay = interaction.fields.getTextInputValue('pay').trim();
+
+  let settings;
+  let source;
+  try {
+    settings = await readSettings(interaction.client);
+    source = await getRecord(interaction.client, MARKERS.assignment, sourceId);
+  } catch (error) {
+    await interaction.editReply(editPayload(storageErrorPanel(error)));
+    return;
+  }
+
+  const entry = settings.fields.find((item) => item.userId === userId);
+
+  const record = {
+    id: makeRecordId('a'),
+    kind: 'repair',
+    project: source?.title ?? null,
+    sourceId,
+    userId,
+    nickname: entry?.nickname ?? null,
+    field: entry?.field ?? null,
+    title,
+    description,
+    pay,
+    status: 'pending',
+    createdAt: Date.now(),
+    createdBy: interaction.user.id,
+    guildId: interaction.guildId,
+    acceptedAt: null,
+    dueAt: null,
+    report: null,
+    rejectReason: null,
+    extensions: 0,
+    warnings: 0,
+    lastNoticeAt: null,
+  };
+
+  let saved;
+  try {
+    saved = await addRecord(interaction.client, MARKERS.assignment, record);
+  } catch (error) {
+    await interaction.editReply(editPayload(storageErrorPanel(error)));
+    return;
+  }
+
+  await postToChannel(interaction.client, config.assignListChannelId, buildListContainer(saved));
+
+  const delivered = await sendDm(interaction.client, userId, buildOfferPayload(saved));
+
+  await notifyAdmins(
+    interaction.client,
+    interaction.guild,
+    panel({
+      color: config.colors.primary,
+      title: '새 수리',
+      description: `<@${userId}> 님에게 **${title}** 수리를 맡겼습니다.`,
+      fields: [
+        ...(saved.project ? [{ name: '프로젝트', value: saved.project }] : []),
+        { name: '맡긴 사람', value: `${interaction.user} (${interaction.user.id})` },
+        { name: '급여', value: pay },
+      ],
+      footer: KINDS.repair.footer,
+    }),
+  );
+
+  await interaction.editReply(
+    editPayload(
+      delivered
+        ? successPanel('맡겼습니다', `<@${userId}> 님에게 **${title}** 수리를 보냈습니다.`, {
+            footer: KINDS.repair.footer,
+          })
+        : warningPanel(
+            '등록은 되었지만 DM 이 가지 않았습니다',
+            `<@${userId}> 님이 DM 을 닫아 두었습니다. 직접 알려 주세요.`,
+            { footer: KINDS.repair.footer },
+          ),
+    ),
+  );
+}
+
 function buildListContainer(record) {
+  const text = labels(record);
   return panel({
     color: config.colors.primary,
-    title: '배당 목록',
+    title: text.listTitle,
     description: `**${record.title}**\n\n${record.description}`,
     fields: [
+      ...(record.project ? [{ name: '프로젝트', value: record.project }] : []),
       { name: '담당', value: `<@${record.userId}>${record.nickname ? ` (${record.nickname})` : ''}` },
       { name: '분야', value: record.field ?? '미지정' },
       { name: '급여', value: record.pay },
       { name: '배당 시각', value: formatKst(record.createdAt) },
       { name: '상태', value: STATUS_LABEL[record.status] ?? record.status },
     ],
-    footer: FOOTER,
+    footer: text.footer,
   });
 }
 
 function buildOfferPayload(record) {
+  const text = labels(record);
   return payload(
     panel({
       color: config.colors.primary,
-      title: '해당 프로젝트를 맡으시겠습니까?',
+      title: text.offerTitle,
       description: `**${record.title}**\n\n${record.description}`,
       fields: [
+        ...(record.project ? [{ name: '프로젝트', value: record.project }] : []),
         { name: '급여', value: record.pay },
         { name: '분야', value: record.field ?? '미지정' },
       ],
       buttons: [
         new ButtonBuilder()
           .setCustomId(`${ASSIGN_IDS.accept}:${record.id}`)
-          .setLabel('배당 수락')
+          .setLabel(text.accept)
           .setStyle(ButtonStyle.Success),
         new ButtonBuilder()
           .setCustomId(`${ASSIGN_IDS.reject}:${record.id}`)
-          .setLabel('배당 거절')
+          .setLabel(text.reject)
           .setStyle(ButtonStyle.Danger),
       ],
-      footer: FOOTER,
+      footer: text.footer,
     }),
   );
 }
@@ -522,7 +800,7 @@ function buildOfferPayload(record) {
 export async function handleAssignAccept(interaction) {
   const id = interaction.customId.slice(`${ASSIGN_IDS.accept}:`.length);
 
-  const modal = new ModalBuilder().setCustomId(`${ASSIGN_IDS.acceptForm}:${id}`).setTitle('배당 수락');
+  const modal = new ModalBuilder().setCustomId(`${ASSIGN_IDS.acceptForm}:${id}`).setTitle('수락');
 
   modal.addComponents(
     new ActionRowBuilder().addComponents(
@@ -589,7 +867,7 @@ export async function handleAssignAcceptForm(interaction) {
 
   if (!record) {
     await interaction.editReply(
-      editPayload(errorPanel('찾지 못했습니다', '이미 처리되었거나 없는 배당입니다.', { footer: FOOTER })),
+      editPayload(errorPanel('찾지 못했습니다', '이미 처리되었거나 없는 기록입니다.', { footer: FOOTER })),
     );
     return;
   }
@@ -606,7 +884,7 @@ export async function handleAssignAcceptForm(interaction) {
     config.assignStatusChannelId,
     panel({
       color: config.colors.success,
-      title: '배당 수락',
+      title: labels(record).accept,
       description: `**${record.title}**`,
       fields: statusFields,
       buttons: [
@@ -624,10 +902,10 @@ export async function handleAssignAcceptForm(interaction) {
     await fetchGuild(interaction.client, record.guildId),
     panel({
       color: config.colors.success,
-      title: '배당 수락',
+      title: labels(record).accept,
       description: `**${record.title}**`,
       fields: statusFields,
-      footer: FOOTER,
+      footer: labels(record).footer,
     }),
   );
 
@@ -643,7 +921,7 @@ export async function handleAssignAcceptForm(interaction) {
 export async function handleAssignReject(interaction) {
   const id = interaction.customId.slice(`${ASSIGN_IDS.reject}:`.length);
 
-  const modal = new ModalBuilder().setCustomId(`${ASSIGN_IDS.rejectForm}:${id}`).setTitle('배당 거절');
+  const modal = new ModalBuilder().setCustomId(`${ASSIGN_IDS.rejectForm}:${id}`).setTitle('거절');
 
   modal.addComponents(
     new ActionRowBuilder().addComponents(
@@ -693,14 +971,14 @@ export async function handleAssignRejectForm(interaction) {
 
   if (!record) {
     await interaction.editReply(
-      editPayload(errorPanel('찾지 못했습니다', '이미 처리되었거나 없는 배당입니다.', { footer: FOOTER })),
+      editPayload(errorPanel('찾지 못했습니다', '이미 처리되었거나 없는 기록입니다.', { footer: FOOTER })),
     );
     return;
   }
 
   const container = panel({
     color: config.colors.danger,
-    title: '배당 거절',
+    title: labels(record).reject,
     description: `**${record.title}**`,
     fields: [
       { name: '담당', value: `<@${record.userId}>` },
@@ -728,7 +1006,7 @@ async function disableOffer(interaction, label) {
         panel({
           color: config.colors.neutral,
           title: '처리되었습니다',
-          description: `이 배당은 이미 **${label}** 상태입니다.`,
+          description: `이미 **${label}** 상태입니다.`,
           footer: FOOTER,
         }),
       ),
@@ -807,7 +1085,7 @@ export async function handleAdjustForm(interaction) {
 
   if (!record) {
     await interaction.editReply(
-      editPayload(errorPanel('찾지 못했습니다', '없는 배당입니다.', { footer: FOOTER })),
+      editPayload(errorPanel('찾지 못했습니다', '없는 기록입니다.', { footer: FOOTER })),
     );
     return;
   }
@@ -874,7 +1152,7 @@ export async function handleAdjustAccept(interaction) {
 
   if (!record) {
     await interaction.editReply(
-      editPayload(errorPanel('찾지 못했습니다', '없는 배당입니다.', { footer: FOOTER })),
+      editPayload(errorPanel('찾지 못했습니다', '없는 기록입니다.', { footer: FOOTER })),
     );
     return;
   }
@@ -949,7 +1227,7 @@ export async function handleAdjustRejectForm(interaction) {
 
   if (!record) {
     await interaction.editReply(
-      editPayload(errorPanel('찾지 못했습니다', '없는 배당입니다.', { footer: FOOTER })),
+      editPayload(errorPanel('찾지 못했습니다', '없는 기록입니다.', { footer: FOOTER })),
     );
     return;
   }
@@ -1003,7 +1281,7 @@ export async function handleExtend(interaction) {
 
   if (!record) {
     await interaction.editReply(
-      editPayload(errorPanel('찾지 못했습니다', '없는 배당입니다.', { footer: FOOTER })),
+      editPayload(errorPanel('찾지 못했습니다', '없는 기록입니다.', { footer: FOOTER })),
     );
     return;
   }

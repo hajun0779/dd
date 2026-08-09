@@ -60,6 +60,10 @@ import {
   handleAssignCommand,
   handleAssignCreate,
   handleAssignPick,
+  handleRepairAutocomplete,
+  handleRepairCommand,
+  handleRepairCreate,
+  handleRepairPick,
   handleAssignReject,
   handleAssignRejectForm,
   handleExtend,
@@ -265,6 +269,22 @@ const COMMANDS = [
     ),
 
   new SlashCommandBuilder()
+    .setName('수리')
+    .setDescription('배당한 프로젝트의 수리를 맡깁니다.')
+    .setDefaultMemberPermissions(MANAGE_GUILD)
+    .setContexts(InteractionContextType.Guild)
+    .addStringOption((option) =>
+      option
+        .setName('프로젝트')
+        .setDescription('배당한 프로젝트')
+        .setRequired(true)
+        .setAutocomplete(true),
+    )
+    .addStringOption((option) =>
+      option.setName('분야').setDescription('맡길 분야').setRequired(true).addChoices(...FIELD_CHOICES),
+    ),
+
+  new SlashCommandBuilder()
     .setName('급여지급')
     .setDescription('직원에게 급여 안내를 보냅니다.')
     .setDefaultMemberPermissions(MANAGE_GUILD)
@@ -396,7 +416,8 @@ client.on(Events.InviteDelete, (invite) => handleInviteDelete(invite));
 client.on(Events.InteractionCreate, async (interaction) => {
   try {
     if (interaction.isAutocomplete()) {
-      await handleProductAutocomplete(interaction);
+      if (interaction.commandName === '수리') await handleRepairAutocomplete(interaction);
+      else await handleProductAutocomplete(interaction);
       return;
     }
 
@@ -412,6 +433,8 @@ client.on(Events.InteractionCreate, async (interaction) => {
         await handleReviewPick(interaction);
       } else if (interaction.customId === ASSIGN_IDS.pick) {
         await handleAssignPick(interaction);
+      } else if (idIs(interaction.customId, ASSIGN_IDS.repairPick)) {
+        await handleRepairPick(interaction);
       }
       return;
     }
@@ -496,6 +519,10 @@ async function handleCommand(interaction) {
       await handleAssignCommand(interaction);
       return;
 
+    case '수리':
+      await handleRepairCommand(interaction);
+      return;
+
     case '급여지급':
       await handlePayCommand(interaction);
       return;
@@ -561,6 +588,7 @@ async function handleModal(interaction) {
 
   if (isAssignCustomId(customId)) {
     if (idIs(customId, ASSIGN_IDS.newForm)) await handleAssignCreate(interaction);
+    else if (idIs(customId, ASSIGN_IDS.repairForm)) await handleRepairCreate(interaction);
     else if (idIs(customId, ASSIGN_IDS.acceptForm)) await handleAssignAcceptForm(interaction);
     else if (idIs(customId, ASSIGN_IDS.rejectForm)) await handleAssignRejectForm(interaction);
     else if (idIs(customId, ASSIGN_IDS.adjustRejectForm)) await handleAdjustRejectForm(interaction);

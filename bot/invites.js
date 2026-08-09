@@ -348,6 +348,99 @@ export async function handleInviteCodeCommand(interaction) {
 }
 
 // ---------------------------------------------------------------------------
+//  /초대랭킹
+// ---------------------------------------------------------------------------
+
+const RANK_DEFAULT = 10;
+const RANK_MAX = 25;
+
+/**
+ * 초대 기록을 사람별로 합쳐서 많은 순서로 늘어놓습니다.
+ * 한 사람이 코드를 여러 번 발급받았어도 전부 더해서 셉니다.
+ */
+export function buildRanking(records, guildId = null) {
+  const totals = new Map();
+
+  for (const record of records) {
+    if (!record?.ownerId) continue;
+    if (guildId && record.guildId !== guildId) continue;
+
+    const row = totals.get(record.ownerId) ?? { ownerId: record.ownerId, count: 0, codes: 0 };
+    row.count += record.count ?? 0;
+    row.codes += 1;
+    totals.set(record.ownerId, row);
+  }
+
+  const rows = [...totals.values()]
+    .filter((row) => row.count > 0)
+    .sort((a, b) => b.count - a.count || a.ownerId.localeCompare(b.ownerId));
+
+  // 같은 인원이면 같은 순위입니다.
+  let rank = 0;
+  let previous = null;
+  rows.forEach((row, index) => {
+    if (row.count !== previous) {
+      rank = index + 1;
+      previous = row.count;
+    }
+    row.rank = rank;
+  });
+
+  return rows;
+}
+
+export function formatRanking(rows, limit = RANK_DEFAULT) {
+  if (rows.length === 0) return '아직 초대로 들어온 사람이 없습니다.';
+  return rows
+    .slice(0, limit)
+    .map((row) => `${row.rank}위  <@${row.ownerId}>  ${row.count}명`)
+    .join('\n');
+}
+
+export async function handleInviteRankCommand(interaction) {
+  // 랭킹은 다 같이 보는 것이라 채널에 그대로 남깁니다.
+  await interaction.reply(payload(neutralPanel('잠시만 기다려 주세요', '초대 기록을 세고 있습니다.')));
+
+  let records;
+  try {
+    records = await listRecords(interaction.client, MARKERS.inviteCode);
+  } catch (error) {
+    await interaction.editReply(editPayload(storageErrorPanel(error)));
+    return;
+  }
+
+  const limit = Math.min(interaction.options?.getInteger?.('인원') ?? RANK_DEFAULT, RANK_MAX);
+  const rows = buildRanking(records, interaction.guildId);
+  const total = rows.reduce((sum, row) => sum + row.count, 0);
+
+  const fields = [];
+
+  if (rows.length > 0) {
+    fields.push({ name: '전체', value: `${rows.length}명이 ${total}명을 초대했습니다` });
+
+    // 내가 순위표 밖에 있으면 내 자리만 따로 보여 줍니다.
+    const mine = rows.find((row) => row.ownerId === interaction.user.id);
+    if (mine && mine.rank > limit) {
+      fields.push({ name: '내 순위', value: `${mine.rank}위  <@${mine.ownerId}>  ${mine.count}명` });
+    }
+  }
+
+  const container = panel({
+    color: config.colors.primary,
+    title: '초대 랭킹',
+    description: formatRanking(rows, limit),
+    fields,
+    footer: `${config.brandName} 초대`,
+  });
+
+  const message = editPayload(container);
+  // 순위표에 이름이 오른 사람들에게 알림이 울리지 않게 막습니다.
+  message.allowedMentions = { parse: [] };
+
+  await interaction.editReply(message);
+}
+
+// ---------------------------------------------------------------------------
 //  들어왔을 때 기록 남기기
 // ---------------------------------------------------------------------------
 

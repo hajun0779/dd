@@ -31,6 +31,7 @@ import {
   handleInviteCodeCommand,
   handleInviteCreate,
   handleInviteDelete,
+  handleInviteRankCommand,
   logInviteJoin,
   primeInvites,
   syncGuild,
@@ -94,6 +95,19 @@ const COMMANDS = [
     .setName('초대코드')
     .setDescription('내 초대 코드를 만들고, 그 코드로 들어온 사람 수를 봅니다.')
     .setContexts(InteractionContextType.Guild),
+
+  new SlashCommandBuilder()
+    .setName('초대랭킹')
+    .setDescription('초대로 들어온 사람이 많은 순서로 봅니다.')
+    .setContexts(InteractionContextType.Guild)
+    .addIntegerOption((option) =>
+      option
+        .setName('인원')
+        .setDescription('보여 줄 인원 (기본 10명)')
+        .setMinValue(1)
+        .setMaxValue(25)
+        .setRequired(false),
+    ),
 
   new SlashCommandBuilder()
     .setName('이용약관')
@@ -430,6 +444,10 @@ async function handleCommand(interaction) {
 
     case '초대코드':
       await handleInviteCodeCommand(interaction);
+      return;
+
+    case '초대랭킹':
+      await handleInviteRankCommand(interaction);
       return;
 
     case '이용약관':

@@ -1,4 +1,4 @@
-# 국방군수지원처 봇
+# RoStation 봇
 
 Node.js(discord.js v14)로 만든 디스코드 봇입니다.
 문의, 후기, 제품 전달, 안내, 업무 배당, 급여를 담당합니다.
@@ -7,7 +7,7 @@ Node.js(discord.js v14)로 만든 디스코드 봇입니다.
 제목, 본문, 구분선, 이미지, 버튼, 드롭다운, 꼬리말이 전부 한 상자 안에 들어갑니다.
 (클래식 임베드는 버튼을 안에 넣을 수 없고 항상 임베드 바깥 아래에 붙습니다.)
 봇이 만들어내는 문구에는 이모티콘을 쓰지 않습니다.
-모든 컨테이너 맨 아래에는 `Copyright 2026. 국방군수지원처. All rights reserved.` 가 붙습니다.
+모든 컨테이너 맨 아래에는 `Copyright 2026. RoStation. All rights reserved.` 가 붙습니다.
 
 ---
 
@@ -177,7 +177,7 @@ TypeError: Cannot read properties of undefined (reading 'fileExists')
 
 ```bash
 npm install -g pm2
-pm2 start index.js --name defense-logistics-bot
+pm2 start index.js --name rostation-bot
 pm2 save
 ```
 
@@ -186,7 +186,7 @@ pm2 save
 **Bot 탭에서 아래 두 가지를 반드시 켜 주세요.**
 
 - `MESSAGE CONTENT INTENT` - 기록에 메시지 본문을 담는 데 필요합니다. 꺼져 있으면 기록이 빈 내용으로 저장됩니다.
-- `SERVER MEMBERS INTENT` - 직원 명단에서 역할별 인원을 세는 데 필요합니다.
+- `SERVER MEMBERS INTENT` - 직원 명단에서 역할별 인원을 세고, 서버에 들어온 사람을 맞이하는 데 필요합니다.
 
 ## 봇에게 필요한 권한
 
@@ -266,6 +266,28 @@ Secretary - @사람
 역할을 주거나 뺐을 때 다음 갱신에 반영되고, 맨 아래에 갱신 시각이 적힙니다.
 
 주기는 `STAFF_LIST_REFRESH_MINUTES` 로 바꿀 수 있습니다. (최소 5분)
+
+## 환영 메시지
+
+서버에 사람이 들어오면 `WELCOME_CHANNEL_ID` 채널에 컨테이너가 올라갑니다.
+
+```
+개발1번출구, 로스테이션으로 오신걸 환영합니다.
+로스테이션에 @들어온사람 님이 승차하셨습니다.
+[그림]
+```
+
+제목은 `WELCOME_TITLE`, 설명은 `WELCOME_DESCRIPTION` 으로 바꿀 수 있습니다.
+설명의 `{user}` 자리에 들어온 사람 멘션이 들어갑니다.
+
+그림은 `WELCOME_IMAGE_URL` 주소에서 봇이 켜질 때 한 번 받아 옵니다.
+디스코드 첨부 주소는 시간이 지나면 만료되므로, 받아 온 파일을 보관 채널
+(`STORAGE_CHANNEL_ID`)에 옮겨 두고 그 뒤로는 그 파일을 붙여서 올립니다.
+그림을 바꾸려면 새 주소를 `WELCOME_IMAGE_URL` 에 넣고, 보관 채널에 있는
+`welcome.png` 메시지를 지운 뒤 봇을 다시 켜 주세요.
+
+들어온 사람을 세려면 개발자 포털에서 `SERVER MEMBERS INTENT` 를 켜야 합니다.
+봇이 들어왔을 때는 올리지 않습니다. 봇도 맞이하려면 `WELCOME_SKIP_BOTS=false` 로 바꾸세요.
 
 ## 파트너 안내
 
@@ -423,6 +445,7 @@ Programmer Clothing  GUI       Sound     VFX
 | 문의 번호 | 열려 있는 채널 이름과 기록 채널의 HTML 파일 이름 |
 | 직원 명단 설정, 분야별 직원 | 보관 채널에 봇이 고정해 둔 메시지 |
 | 제품과 zip 파일 | 보관 채널에 봇이 올린 메시지 |
+| 환영 그림 | 보관 채널에 봇이 올린 메시지 (welcome.png) |
 | 배당 하나하나 | 보관 채널에 봇이 올린 메시지 (고칠 때 그 메시지를 수정) |
 | 급여 하나하나 | 보관 채널에 봇이 올린 메시지 |
 
@@ -435,12 +458,17 @@ Programmer Clothing  GUI       Sound     VFX
 | 이름 | 설명 |
 | --- | --- |
 | `DISCORD_TOKEN` | 봇 토큰. 넣으면 config.js 의 BOT_TOKEN 보다 우선합니다. |
-| `BRAND_NAME` | 컨테이너 꼬리말에 들어갈 이름 (국방군수지원처) |
+| `BRAND_NAME` | 컨테이너 꼬리말에 들어갈 이름 (RoStation) |
 | `COPYRIGHT_YEAR` | 저작권 문구의 연도 (2026) |
 | `COPYRIGHT_TEXT` | 저작권 문구 전체를 직접 적고 싶을 때 |
 | `ADMIN_ROLE_ID` | 총관리자 역할 (없음) |
 | `STAFF_LIST_CHANNEL_ID` | 직원 명단이 자동 갱신될 채널 (1535253952197697536) |
 | `STAFF_LIST_REFRESH_MINUTES` | 직원 명단 갱신 주기(분) (60) |
+| `WELCOME_CHANNEL_ID` | 들어온 사람을 맞이할 채널 (1535519323916083244) |
+| `WELCOME_IMAGE_URL` | 환영 컨테이너에 넣을 그림 주소 |
+| `WELCOME_TITLE` | 환영 제목 (개발1번출구, 로스테이션으로 오신걸 환영합니다.) |
+| `WELCOME_DESCRIPTION` | 환영 설명. `{user}` 자리에 멘션 (로스테이션에 {user}님이 승차하셨습니다.) |
+| `WELCOME_SKIP_BOTS` | 봇이 들어왔을 때는 맞이하지 않음 (true) |
 | `TIMEZONE_OFFSET_HOURS` | 한국 시간 보정값 (9) |
 | `TICKET_PANEL_CHANNEL_ID` | 문의 패널 채널 (1535140042652254219) |
 | `TICKET_STAFF_ROLE_ID` | 스태프 역할 (1535140290581635162) |
@@ -485,6 +513,7 @@ bot/
   products.js         제품 등록, 전송, 받기
   storage.js          설정과 제품을 디스코드 메시지에 보관
   staff.js            직원 명단과 직책 설정
+  welcome.js          서버에 들어온 사람 맞이하기
   terms.js            이용약관 내용과 게시
   partnership.js      파트너 안내 게시
   components.js       Components V2 컨테이너 만들기 (버튼을 안에 넣는 부분)

@@ -71,17 +71,30 @@ function int(name, fallback) {
   return Number.isFinite(parsed) ? parsed : fallback;
 }
 
+function bool(name, fallback) {
+  const value = str(name, null);
+  if (value === null) return fallback;
+  return !['0', 'false', 'no', 'off', '아니오', '아니요'].includes(value.toLowerCase());
+}
+
+// 서버에 들어온 사람을 맞이할 때 컨테이너 안에 넣을 이미지 주소입니다.
+// 디스코드 첨부 주소는 시간이 지나면 만료되므로, 봇이 처음 실행될 때 한 번 내려받아
+// 보관 채널에 옮겨 두고 그 뒤로는 파일을 직접 붙여서 올립니다.
+const DEFAULT_WELCOME_IMAGE_URL =
+  'https://cdn.discordapp.com/attachments/1535519116742627379/1535819316497481790/Frame_65.png' +
+  '?ex=6a7926b3&is=6a77d533&hm=ac0b0458d360c16365e92f079708374eca4e022e378dd50d4972c0f3a89567b1&';
+
 export const config = {
   // .env 의 DISCORD_TOKEN 이 있으면 그걸 쓰고, 없으면 위의 BOT_TOKEN 을 씁니다.
   token: str('DISCORD_TOKEN', BOT_TOKEN.trim().length > 0 ? BOT_TOKEN.trim() : null),
 
   // 컨테이너 맨 아래 작은 글씨에 들어갈 이름
-  brandName: str('BRAND_NAME', '국방군수지원처'),
+  brandName: str('BRAND_NAME', 'RoStation'),
 
   // 모든 컨테이너 맨 아래에 붙는 저작권 문구
   copyrightText: str(
     'COPYRIGHT_TEXT',
-    `Copyright ${str('COPYRIGHT_YEAR', '2026')}. ${str('BRAND_NAME', '국방군수지원처')}. All rights reserved.`,
+    `Copyright ${str('COPYRIGHT_YEAR', '2026')}. ${str('BRAND_NAME', 'RoStation')}. All rights reserved.`,
   ),
 
   // 티켓
@@ -98,6 +111,15 @@ export const config = {
   // 직원 명단이 계속 올라가 있을 채널과 갱신 주기(분)
   staffListChannelId: str('STAFF_LIST_CHANNEL_ID', '1535253952197697536'),
   staffListRefreshMinutes: int('STAFF_LIST_REFRESH_MINUTES', 60),
+
+  // 서버에 들어온 사람을 맞이할 채널과 문구
+  welcomeChannelId: str('WELCOME_CHANNEL_ID', '1535519323916083244'),
+  welcomeImageUrl: str('WELCOME_IMAGE_URL', DEFAULT_WELCOME_IMAGE_URL),
+  welcomeTitle: str('WELCOME_TITLE', '개발1번출구, 로스테이션으로 오신걸 환영합니다.'),
+  // {user} 자리에 들어온 사람 멘션이 들어갑니다.
+  welcomeDescription: str('WELCOME_DESCRIPTION', '로스테이션에 {user}님이 승차하셨습니다.'),
+  // 봇이 들어왔을 때도 맞이할지 여부
+  welcomeSkipBots: bool('WELCOME_SKIP_BOTS', true),
 
   // 업무 배당
   assignListChannelId: str('ASSIGN_LIST_CHANNEL_ID', null),

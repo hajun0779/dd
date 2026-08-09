@@ -26,6 +26,7 @@ import {
 } from './tickets.js';
 
 import { handleTermsCommand } from './terms.js';
+import { handleMemberJoin, prepareWelcomeImage } from './welcome.js';
 import { handleStaffListCommand, handleStaffSetupCommand, startStaffBoardRefresh } from './staff.js';
 import { handlePartnershipCommand } from './partnership.js';
 import { REVIEW_IDS, handleReviewPick, handleReviewSubmit } from './reviews.js';
@@ -313,6 +314,11 @@ client.once(Events.ClientReady, async () => {
   // 직원 명단 채널을 주기적으로 갱신합니다.
   startStaffBoardRefresh(client);
 
+  // 환영 그림을 미리 받아 둡니다. 주소가 만료돼도 계속 쓸 수 있도록 파일로 들고 있습니다.
+  await prepareWelcomeImage(client).catch((error) =>
+    log.warn('환영 그림 준비 실패', error?.message ?? error),
+  );
+
   log.info(`지금 한국 시간: ${formatKst(Date.now())} / 문의 시간: ${formatBusinessHours()} (${isBusinessHours() ? '지금 문의 시간 안' : '지금 문의 시간 밖'})`);
   log.info('봇 준비가 끝났습니다.');
 });
@@ -320,6 +326,16 @@ client.once(Events.ClientReady, async () => {
 client.on(Events.GuildCreate, async (guild) => {
   log.info(`새 서버에 참여했습니다: ${guild.name} (${guild.id})`);
   await registerCommands();
+});
+
+// --- 서버에 들어온 사람 맞이하기 ---
+
+client.on(Events.GuildMemberAdd, async (member) => {
+  try {
+    await handleMemberJoin(member);
+  } catch (error) {
+    log.error('환영 메시지 처리 중 오류', error?.stack ?? error);
+  }
 });
 
 // --- 상호작용 처리 ---

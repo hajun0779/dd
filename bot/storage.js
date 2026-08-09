@@ -8,6 +8,7 @@ import { log } from './log.js';
 
 const SETTINGS_MARKER = 'BOT_SETTINGS_V1';
 const PRODUCT_MARKER = 'BOT_PRODUCT_V1';
+const ASSET_MARKER = 'BOT_ASSET_V1';
 const CACHE_MS = 20_000;
 
 export const MARKERS = {
@@ -256,6 +257,66 @@ export async function removeProduct(client, id) {
     }
   }
   return false;
+}
+
+// --- 그림 파일 보관 ---
+//
+// 밖에서 받아온 이미지 주소는 시간이 지나면 만료됩니다.
+// 파일을 보관 채널에 한 번 옮겨 두고, 그 뒤로는 여기서 다시 받아 씁니다.
+
+function parseAssetMessage(message) {
+  const data = unwrap(ASSET_MARKER, message.content);
+  if (!data?.key) return null;
+
+  const attachment = message.attachments?.first?.() ?? null;
+  return {
+    key: data.key,
+    savedAt: data.savedAt ?? 0,
+    messageId: message.id,
+    url: attachment?.url ?? null,
+    fileName: attachment?.name ?? null,
+    size: attachment?.size ?? 0,
+  };
+}
+
+/** 보관해 둔 파일을 찾습니다. 첨부 주소는 읽을 때마다 새로 발급됩니다. */
+export async function getAsset(client, key) {
+  const channel = await getStorageChannel(client);
+  let before;
+
+  for (let page = 0; page < 3; page += 1) {
+    const batch = await channel.messages
+      .fetch({ limit: 100, ...(before ? { before } : {}) })
+      .catch(() => null);
+
+    if (!batch || batch.size === 0) break;
+
+    for (const message of batch.values()) {
+      if (message.author?.id !== client.user.id) continue;
+      const asset = parseAssetMessage(message);
+      if (asset?.key === key && asset.url) return asset;
+    }
+
+    const ordered = [...batch.values()];
+    before = ordered[ordered.length - 1].id;
+    if (batch.size < 100) break;
+  }
+
+  return null;
+}
+
+/** 파일을 보관 채널에 올려 둡니다. */
+export async function saveAsset(client, key, buffer, fileName) {
+  const channel = await getStorageChannel(client);
+  const { AttachmentBuilder } = await import('discord.js');
+
+  const sent = await channel.send({
+    content: wrap(ASSET_MARKER, { key, savedAt: Date.now() }),
+    files: [new AttachmentBuilder(buffer, { name: fileName })],
+  });
+
+  log.info(`파일 보관: ${key}`);
+  return parseAssetMessage(sent);
 }
 
 // --- 일반 기록 (배당, 급여) ---

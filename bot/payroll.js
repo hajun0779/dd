@@ -12,6 +12,7 @@ import { log } from './log.js';
 import { formatKst } from './time.js';
 import { editPayload, errorPanel, neutralPanel, panel, payload, successPanel, warningPanel } from './components.js';
 import { isAdmin, notifyAdmins, postToChannel, readField, sendDm } from './assignments.js';
+import { canUseCommand, deniedReason } from './permissions.js';
 import { MARKERS, addRecord, getRecord, listRecords, makeRecordId, updateRecord, StorageError } from './storage.js';
 
 const FOOTER = `${config.brandName} 급여`;
@@ -56,7 +57,7 @@ export async function handlePayCommand(interaction) {
     }),
   );
 
-  if (!isAdmin(interaction.member)) {
+  if (!canUseCommand(interaction.member, interaction.commandName)) {
     await interaction.editReply(
       editPayload(
         errorPanel(

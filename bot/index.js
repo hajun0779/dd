@@ -26,6 +26,15 @@ import {
 } from './tickets.js';
 
 import { handleRepairTermsCommand, handleTermsCommand } from './terms.js';
+import { canUseCommand, deniedReason, hidesByDefault } from './permissions.js';
+import {
+  PAYMENT_IDS,
+  handlePaymentConfirm,
+  handlePaymentFail,
+  handlePaymentRequestCommand,
+  handlePaymentSent,
+  isPaymentCustomId,
+} from './payments.js';
 import { handleMemberJoin, prepareWelcomeImage } from './welcome.js';
 import {
   handleInviteCodeCommand,
@@ -85,14 +94,24 @@ import {
 
 const MANAGE_GUILD = PermissionsBitField.Flags.ManageGuild;
 
+/**
+ * 목록에서 숨길 명령만 서버 관리 권한을 걸어 둡니다.
+ * COMMAND_ROLES 로 역할을 정한 명령은 모두에게 보이고, 실제 판정은 봇이 합니다.
+ */
+function applyDefaultPermissions(commands) {
+  for (const command of commands) {
+    command.setDefaultMemberPermissions(hidesByDefault(command.name) ? MANAGE_GUILD : null);
+  }
+  return commands;
+}
+
 // 분야는 목록에서 고르게 합니다. config.js 의 WORK_FIELDS 를 고치면 목록도 바뀝니다.
 const FIELD_CHOICES = WORK_FIELDS.map((field) => ({ name: field, value: field }));
 
-const COMMANDS = [
+const COMMANDS = applyDefaultPermissions([
   new SlashCommandBuilder()
     .setName('티켓패널')
     .setDescription('문의 패널을 다시 게시합니다.')
-    .setDefaultMemberPermissions(MANAGE_GUILD)
     .setContexts(InteractionContextType.Guild),
 
   new SlashCommandBuilder()
@@ -116,25 +135,21 @@ const COMMANDS = [
   new SlashCommandBuilder()
     .setName('이용약관')
     .setDescription('이 채널에 이용약관을 올립니다.')
-    .setDefaultMemberPermissions(MANAGE_GUILD)
     .setContexts(InteractionContextType.Guild),
 
   new SlashCommandBuilder()
     .setName('수리약관')
     .setDescription('이 채널에 A/S 이용약관을 올립니다.')
-    .setDefaultMemberPermissions(MANAGE_GUILD)
     .setContexts(InteractionContextType.Guild),
 
   new SlashCommandBuilder()
     .setName('직원명단')
     .setDescription('이 채널에 직원 명단을 올립니다.')
-    .setDefaultMemberPermissions(MANAGE_GUILD)
     .setContexts(InteractionContextType.Guild),
 
   new SlashCommandBuilder()
     .setName('직원명단설정')
     .setDescription('직원 명단에 쓸 역할과 직책을 설정합니다.')
-    .setDefaultMemberPermissions(MANAGE_GUILD)
     .setContexts(InteractionContextType.Guild)
     .addSubcommand((sub) =>
       sub
@@ -172,7 +187,6 @@ const COMMANDS = [
   new SlashCommandBuilder()
     .setName('파트너쉽')
     .setDescription('이 채널에 파트너 안내를 올립니다.')
-    .setDefaultMemberPermissions(MANAGE_GUILD)
     .setContexts(InteractionContextType.Guild)
     .addStringOption((option) =>
       option.setName('서버링크').setDescription('들어갈 서버 주소').setRequired(true),
@@ -193,7 +207,6 @@ const COMMANDS = [
   new SlashCommandBuilder()
     .setName('제품설정')
     .setDescription('보낼 제품을 등록하고 관리합니다.')
-    .setDefaultMemberPermissions(MANAGE_GUILD)
     .setContexts(InteractionContextType.Guild)
     .addSubcommand((sub) =>
       sub
@@ -222,7 +235,6 @@ const COMMANDS = [
   new SlashCommandBuilder()
     .setName('제품전송')
     .setDescription('등록된 제품을 특정 유저에게 보냅니다.')
-    .setDefaultMemberPermissions(MANAGE_GUILD)
     .setContexts(InteractionContextType.Guild)
     .addStringOption((option) =>
       option.setName('제품').setDescription('보낼 제품').setRequired(true).setAutocomplete(true),
@@ -234,7 +246,6 @@ const COMMANDS = [
   new SlashCommandBuilder()
     .setName('분야설정')
     .setDescription('직원을 분야에 등록하고 관리합니다.')
-    .setDefaultMemberPermissions(MANAGE_GUILD)
     .setContexts(InteractionContextType.Guild)
     .addSubcommand((sub) =>
       sub
@@ -262,7 +273,6 @@ const COMMANDS = [
   new SlashCommandBuilder()
     .setName('배당')
     .setDescription('분야를 골라 업무를 배당합니다.')
-    .setDefaultMemberPermissions(MANAGE_GUILD)
     .setContexts(InteractionContextType.Guild)
     .addStringOption((option) =>
       option.setName('분야').setDescription('배당할 분야').setRequired(true).addChoices(...FIELD_CHOICES),
@@ -271,7 +281,6 @@ const COMMANDS = [
   new SlashCommandBuilder()
     .setName('수리')
     .setDescription('배당한 프로젝트의 수리를 맡깁니다.')
-    .setDefaultMemberPermissions(MANAGE_GUILD)
     .setContexts(InteractionContextType.Guild)
     .addStringOption((option) =>
       option
@@ -287,7 +296,6 @@ const COMMANDS = [
   new SlashCommandBuilder()
     .setName('급여지급')
     .setDescription('직원에게 급여 안내를 보냅니다.')
-    .setDefaultMemberPermissions(MANAGE_GUILD)
     .setContexts(InteractionContextType.Guild)
     .addStringOption((option) =>
       option.setName('급여').setDescription('예: 100,000원').setRequired(true).setMaxLength(40),
@@ -295,14 +303,32 @@ const COMMANDS = [
     .addUserOption((option) => option.setName('직원').setDescription('받을 직원').setRequired(true)),
 
   new SlashCommandBuilder()
+    .setName('송금요청')
+    .setDescription('계좌를 DM 으로 보내고 입금을 확인합니다.')
+    .setContexts(InteractionContextType.Guild)
+    .addUserOption((option) => option.setName('유저').setDescription('보낼 사람').setRequired(true))
+    .addStringOption((option) =>
+      option.setName('얼마').setDescription('예: 100,000원').setRequired(true).setMaxLength(40),
+    )
+    .addStringOption((option) =>
+      option
+        .setName('기한')
+        .setDescription('예: 3일, 48시간, 2026-08-10 18:00')
+        .setRequired(true)
+        .setMaxLength(40),
+    )
+    .addStringOption((option) =>
+      option.setName('내용').setDescription('무엇에 대한 송금인지').setRequired(false).setMaxLength(200),
+    ),
+
+  new SlashCommandBuilder()
     .setName('지급상태')
     .setDescription('지금까지 지급된 급여를 봅니다.')
-    .setDefaultMemberPermissions(MANAGE_GUILD)
     .setContexts(InteractionContextType.Guild)
     .addUserOption((option) =>
       option.setName('직원').setDescription('볼 직원 (비우면 본인)').setRequired(false),
     ),
-].map((command) => command.toJSON());
+]).map((command) => command.toJSON());
 
 const client = new Client({
   intents: [
@@ -457,6 +483,13 @@ client.on(Events.InteractionCreate, async (interaction) => {
 });
 
 async function handleCommand(interaction) {
+  if (!canUseCommand(interaction.member, interaction.commandName)) {
+    await interaction.reply(
+      payload(errorPanel('권한이 없습니다', deniedReason(interaction.commandName)), { ephemeral: true }),
+    );
+    return;
+  }
+
   switch (interaction.commandName) {
     case '티켓패널': {
       await replyWorking(interaction, '문의 패널을 다시 게시하고 있습니다.');
@@ -527,6 +560,10 @@ async function handleCommand(interaction) {
       await handlePayCommand(interaction);
       return;
 
+    case '송금요청':
+      await handlePaymentRequestCommand(interaction);
+      return;
+
     case '지급상태':
       await handlePayStatusCommand(interaction);
       return;
@@ -575,6 +612,13 @@ async function handleButton(interaction) {
   if (isPayrollCustomId(customId)) {
     if (idIs(customId, PAYROLL_IDS.start)) await handlePayStart(interaction);
     else if (idIs(customId, PAYROLL_IDS.done)) await handlePayDone(interaction);
+    return;
+  }
+
+  if (isPaymentCustomId(customId)) {
+    if (idIs(customId, PAYMENT_IDS.sent)) await handlePaymentSent(interaction);
+    else if (idIs(customId, PAYMENT_IDS.ok)) await handlePaymentConfirm(interaction);
+    else if (idIs(customId, PAYMENT_IDS.no)) await handlePaymentFail(interaction);
   }
 }
 

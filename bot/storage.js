@@ -16,6 +16,7 @@ export const MARKERS = {
   payroll: 'BOT_PAYROLL_V1',
   warningBoard: 'BOT_WARNBOARD_V1',
   inviteCode: 'BOT_INVITE_V1',
+  payment: 'BOT_PAYREQ_V1',
 };
 
 /**

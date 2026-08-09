@@ -10,6 +10,7 @@ import {
 } from 'discord.js';
 
 import { WORK_FIELDS, config, isWorkField } from './config.js';
+import { canUseCommand, deniedReason, isAdminMember } from './permissions.js';
 import { log } from './log.js';
 import { formatKst, formatDuration } from './time.js';
 import { editPayload, errorPanel, neutralPanel, panel, payload, successPanel, warningPanel } from './components.js';
@@ -80,14 +81,16 @@ const STATUS_LABEL = {
 
 // --- 권한 ---
 
-export function isAdmin(member) {
-  if (!member) return false;
-  if (member.permissions?.has?.(PermissionsBitField.Flags.Administrator)) return true;
-  if (!config.adminRoleId) return false;
-  return Boolean(member.roles?.cache?.has(config.adminRoleId));
+export const isAdmin = isAdminMember;
+
+function deniedPanel(commandName = null) {
+  if (commandName) {
+    return errorPanel('권한이 없습니다', deniedReason(commandName), { footer: FOOTER });
+  }
+  return deniedPanelDefault();
 }
 
-function deniedPanel() {
+function deniedPanelDefault() {
   return errorPanel(
     '권한이 없습니다',
     config.adminRoleId
@@ -177,8 +180,8 @@ export async function handleFieldSetupCommand(interaction) {
     }),
   );
 
-  if (!isAdmin(interaction.member)) {
-    await interaction.editReply(editPayload(deniedPanel()));
+  if (!canUseCommand(interaction.member, interaction.commandName)) {
+    await interaction.editReply(editPayload(deniedPanel(interaction.commandName)));
     return;
   }
 
@@ -267,8 +270,8 @@ export async function handleFieldRemoveCommand(interaction) {
     }),
   );
 
-  if (!isAdmin(interaction.member)) {
-    await interaction.editReply(editPayload(deniedPanel()));
+  if (!canUseCommand(interaction.member, interaction.commandName)) {
+    await interaction.editReply(editPayload(deniedPanel(interaction.commandName)));
     return;
   }
 
@@ -326,8 +329,8 @@ export async function handleAssignCommand(interaction) {
     }),
   );
 
-  if (!isAdmin(interaction.member)) {
-    await interaction.editReply(editPayload(deniedPanel()));
+  if (!canUseCommand(interaction.member, interaction.commandName)) {
+    await interaction.editReply(editPayload(deniedPanel(interaction.commandName)));
     return;
   }
 
@@ -543,8 +546,8 @@ export async function handleRepairCommand(interaction) {
     }),
   );
 
-  if (!isAdmin(interaction.member)) {
-    await interaction.editReply(editPayload(deniedPanel()));
+  if (!canUseCommand(interaction.member, interaction.commandName)) {
+    await interaction.editReply(editPayload(deniedPanel(interaction.commandName)));
     return;
   }
 

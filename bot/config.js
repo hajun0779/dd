@@ -139,6 +139,13 @@ export const config = {
   // 후기가 올라갈 채널
   reviewChannelId: str('REVIEW_CHANNEL_ID', null),
 
+  // 송금 받을 계좌. /송금요청 안내에 그대로 들어갑니다.
+  paymentBank: str('PAYMENT_BANK', '케이뱅크'),
+  paymentAccount: str('PAYMENT_ACCOUNT', '888002809240'),
+  paymentHolder: str('PAYMENT_HOLDER', 'ㅈㅎㅈ'),
+  // 송금 확인과 미확인 기록이 올라갈 채널
+  paymentLogChannelId: str('PAYMENT_LOG_CHANNEL_ID', null),
+
   // A/S 조건. /수리약관 글에 그대로 들어갑니다.
   // 전달이 끝난 뒤 몇 시간 안에 맡길 수 있는지, 무상으로 몇 번까지 되는지
   repairHours: int('REPAIR_HOURS', 24),
@@ -216,6 +223,38 @@ export const WORK_FIELDS = (() => {
 export function isWorkField(value) {
   return WORK_FIELDS.includes(value);
 }
+
+// ===========================================================================
+//  명령어 사용 권한
+//
+//  명령마다 쓸 수 있는 역할을 정할 수 있습니다. 비우면 기본값을 씁니다.
+//  형식:  명령이름:역할ID
+//  여러 명령은 쉼표로, 한 명령에 역할 여러 개는 슬래시로 나눕니다.
+//
+//    COMMAND_ROLES=송금요청:1111,배당:2222/3333
+//
+//  역할을 정한 명령은 서버 관리 권한이 없어도 그 역할만 있으면 쓸 수 있습니다.
+//  총관리자 역할과 서버 관리자는 언제나 모든 명령을 쓸 수 있습니다.
+// ===========================================================================
+config.commandRoles = (() => {
+  const raw = str('COMMAND_ROLES', null);
+  const table = {};
+  if (!raw) return table;
+
+  for (const chunk of raw.split(',')) {
+    const [name, ids] = chunk.split(':');
+    if (!name || !ids) continue;
+
+    const list = ids
+      .split('/')
+      .map((id) => id.trim())
+      .filter((id) => /^\d{17,20}$/.test(id));
+
+    if (list.length > 0) table[name.trim()] = list;
+  }
+
+  return table;
+})();
 
 // 문의 종류마다 카테고리가 따로 있습니다.
 // 제품 문의와 파트너 문의 카테고리 ID 를 아직 넣지 않았다면 통합 문의 카테고리를 대신 씁니다.
@@ -297,6 +336,7 @@ export function getMissingOptionalIds() {
     ['ASSIGN_STATUS_CHANNEL_ID', '배당 상황 채널', config.assignStatusChannelId],
     ['WARNING_CHANNEL_ID', '경고 상태 채널', config.warningChannelId],
     ['PAYROLL_CHANNEL_ID', '급여 신청 채널', config.payrollChannelId],
+    ['PAYMENT_LOG_CHANNEL_ID', '송금 기록 채널', config.paymentLogChannelId],
   ];
   return wanted.filter(([, , value]) => !value).map(([name, label]) => [name, label]);
 }

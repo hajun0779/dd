@@ -17,6 +17,8 @@ import { config } from './config.js';
 export const COMMAND_ACCESS = {
   티켓패널: 'staff',
   문의안내: 'staff',
+  문의안내추가: 'staff',
+  문의안내삭제: 'staff',
   이용약관: 'staff',
   수리약관: 'staff',
   채용공고: 'staff',

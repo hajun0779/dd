@@ -17,6 +17,7 @@ export const MARKERS = {
   warningBoard: 'BOT_WARNBOARD_V1',
   inviteCode: 'BOT_INVITE_V1',
   payment: 'BOT_PAYREQ_V1',
+  notice: 'BOT_NOTICE_V1',
 };
 
 /**
@@ -401,6 +402,15 @@ export async function updateRecord(client, marker, id, patch) {
 
   await message.edit({ content });
   return { ...next, messageId, message };
+}
+
+/** 기록을 지웁니다. 없으면 false 를 돌려줍니다. */
+export async function removeRecord(client, marker, id) {
+  const record = await getRecord(client, marker, id);
+  if (!record) return false;
+
+  await record.message.delete().catch(() => {});
+  return true;
 }
 
 /** 이름에서 제품 ID 를 만듭니다. 상호작용 ID 에 들어가므로 짧고 안전하게 만듭니다. */

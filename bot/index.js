@@ -26,7 +26,12 @@ import {
 } from './tickets.js';
 
 import { handleRepairTermsCommand, handleTermsCommand } from './terms.js';
-import { handleTicketNoticeCommand } from './notice.js';
+import {
+  handleNoticeAddCommand,
+  handleNoticeAutocomplete,
+  handleNoticeRemoveCommand,
+  handleTicketNoticeCommand,
+} from './notice.js';
 import { canUseCommand, deniedReason, hidesByDefault } from './permissions.js';
 import {
   RECRUIT_CHOICES,
@@ -147,6 +152,26 @@ const COMMANDS = applyDefaultPermissions([
     .setContexts(InteractionContextType.Guild)
     .addChannelOption((option) =>
       option.setName('채널').setDescription('올릴 채널 (비우면 이 채널)').setRequired(false),
+    ),
+
+  new SlashCommandBuilder()
+    .setName('문의안내추가')
+    .setDescription('문의 안내에 문단을 하나 더합니다.')
+    .setContexts(InteractionContextType.Guild)
+    .addStringOption((option) =>
+      option
+        .setName('내용')
+        .setDescription('더할 문단. 줄을 바꾸려면 \\n 을 넣으세요.')
+        .setRequired(true)
+        .setMaxLength(900),
+    ),
+
+  new SlashCommandBuilder()
+    .setName('문의안내삭제')
+    .setDescription('더했던 문단을 뺍니다.')
+    .setContexts(InteractionContextType.Guild)
+    .addStringOption((option) =>
+      option.setName('문단').setDescription('뺄 문단').setRequired(true).setAutocomplete(true),
     ),
 
   new SlashCommandBuilder()
@@ -481,6 +506,7 @@ client.on(Events.InteractionCreate, async (interaction) => {
   try {
     if (interaction.isAutocomplete()) {
       if (interaction.commandName === '수리') await handleRepairAutocomplete(interaction);
+      else if (interaction.commandName === '문의안내삭제') await handleNoticeAutocomplete(interaction);
       else await handleProductAutocomplete(interaction);
       return;
     }
@@ -552,6 +578,14 @@ async function handleCommand(interaction) {
 
     case '문의안내':
       await handleTicketNoticeCommand(interaction);
+      return;
+
+    case '문의안내추가':
+      await handleNoticeAddCommand(interaction);
+      return;
+
+    case '문의안내삭제':
+      await handleNoticeRemoveCommand(interaction);
       return;
 
     case '이용약관':

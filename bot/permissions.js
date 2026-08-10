@@ -16,6 +16,7 @@ import { config } from './config.js';
 // everyone: 누구나 / staff: 서버 관리 권한 / admin: 총관리자만
 export const COMMAND_ACCESS = {
   티켓패널: 'staff',
+  문의안내: 'staff',
   이용약관: 'staff',
   수리약관: 'staff',
   채용공고: 'staff',

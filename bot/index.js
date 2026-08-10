@@ -26,6 +26,7 @@ import {
 } from './tickets.js';
 
 import { handleRepairTermsCommand, handleTermsCommand } from './terms.js';
+import { handleTicketNoticeCommand } from './notice.js';
 import { canUseCommand, deniedReason, hidesByDefault } from './permissions.js';
 import {
   RECRUIT_CHOICES,
@@ -138,6 +139,14 @@ const COMMANDS = applyDefaultPermissions([
         .setMinValue(1)
         .setMaxValue(25)
         .setRequired(false),
+    ),
+
+  new SlashCommandBuilder()
+    .setName('문의안내')
+    .setDescription('문의 안내를 올립니다.')
+    .setContexts(InteractionContextType.Guild)
+    .addChannelOption((option) =>
+      option.setName('채널').setDescription('올릴 채널 (비우면 이 채널)').setRequired(false),
     ),
 
   new SlashCommandBuilder()
@@ -539,6 +548,10 @@ async function handleCommand(interaction) {
 
     case '초대랭킹':
       await handleInviteRankCommand(interaction);
+      return;
+
+    case '문의안내':
+      await handleTicketNoticeCommand(interaction);
       return;
 
     case '이용약관':

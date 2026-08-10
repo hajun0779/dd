@@ -91,7 +91,10 @@ export function panel({
   for (const field of fields) {
     if (!field) continue;
     separate();
-    container.addTextDisplayComponents(text(`**${field.name}**\n${field.value}`));
+    // 이름을 비우면 굵은 제목 없이 문단만 들어갑니다.
+    container.addTextDisplayComponents(
+      text(field.name ? `**${field.name}**\n${field.value}` : String(field.value)),
+    );
     hasContent = true;
   }
 

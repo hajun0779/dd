@@ -18,6 +18,7 @@ export const COMMAND_ACCESS = {
   티켓패널: 'staff',
   이용약관: 'staff',
   수리약관: 'staff',
+  채용공고: 'staff',
   초대코드: 'everyone',
   초대랭킹: 'everyone',
   직원명단: 'staff',

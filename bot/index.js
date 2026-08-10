@@ -27,6 +27,7 @@ import {
 
 import { handleRepairTermsCommand, handleTermsCommand } from './terms.js';
 import { canUseCommand, deniedReason, hidesByDefault } from './permissions.js';
+import { RECRUIT_CHOICES, handleRecruitCommand } from './recruit.js';
 import {
   PAYMENT_IDS,
   handlePaymentConfirm,
@@ -141,6 +142,20 @@ const COMMANDS = applyDefaultPermissions([
     .setName('수리약관')
     .setDescription('이 채널에 A/S 이용약관을 올립니다.')
     .setContexts(InteractionContextType.Guild),
+
+  new SlashCommandBuilder()
+    .setName('채용공고')
+    .setDescription('고른 팀의 채용 공고를 이 채널에 올립니다.')
+    .setContexts(InteractionContextType.Guild)
+    .addStringOption((option) =>
+      option.setName('팀').setDescription('모집할 팀').setRequired(true).addChoices(...RECRUIT_CHOICES),
+    )
+    .addIntegerOption((option) =>
+      option.setName('인원').setDescription('모집 인원').setRequired(true).setMinValue(1).setMaxValue(99),
+    )
+    .addBooleanOption((option) =>
+      option.setName('모두멘션').setDescription('모두에게 알릴지 여부').setRequired(false),
+    ),
 
   new SlashCommandBuilder()
     .setName('직원명단')
@@ -518,6 +533,10 @@ async function handleCommand(interaction) {
 
     case '수리약관':
       await handleRepairTermsCommand(interaction);
+      return;
+
+    case '채용공고':
+      await handleRecruitCommand(interaction);
       return;
 
     case '직원명단':

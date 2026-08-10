@@ -139,6 +139,9 @@ export const config = {
   // 후기가 올라갈 채널
   reviewChannelId: str('REVIEW_CHANNEL_ID', null),
 
+  // 채용 지원서가 올라갈 채널. 비우면 총관리자에게 DM 으로만 갑니다.
+  recruitChannelId: str('RECRUIT_CHANNEL_ID', null),
+
   // 송금 받을 계좌. /송금요청 안내에 그대로 들어갑니다.
   paymentBank: str('PAYMENT_BANK', '케이뱅크'),
   paymentAccount: str('PAYMENT_ACCOUNT', '888002809240'),
@@ -337,6 +340,7 @@ export function getMissingOptionalIds() {
     ['WARNING_CHANNEL_ID', '경고 상태 채널', config.warningChannelId],
     ['PAYROLL_CHANNEL_ID', '급여 신청 채널', config.payrollChannelId],
     ['PAYMENT_LOG_CHANNEL_ID', '송금 기록 채널', config.paymentLogChannelId],
+    ['RECRUIT_CHANNEL_ID', '채용 지원서 채널', config.recruitChannelId],
   ];
   return wanted.filter(([, , value]) => !value).map(([name, label]) => [name, label]);
 }

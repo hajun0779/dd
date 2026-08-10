@@ -27,7 +27,14 @@ import {
 
 import { handleRepairTermsCommand, handleTermsCommand } from './terms.js';
 import { canUseCommand, deniedReason, hidesByDefault } from './permissions.js';
-import { RECRUIT_CHOICES, handleRecruitCommand } from './recruit.js';
+import {
+  RECRUIT_CHOICES,
+  RECRUIT_IDS,
+  handleRecruitApply,
+  handleRecruitCommand,
+  handleRecruitSubmit,
+  isRecruitCustomId,
+} from './recruit.js';
 import {
   PAYMENT_IDS,
   handlePaymentConfirm,
@@ -152,6 +159,13 @@ const COMMANDS = applyDefaultPermissions([
     )
     .addIntegerOption((option) =>
       option.setName('인원').setDescription('모집 인원').setRequired(true).setMinValue(1).setMaxValue(99),
+    )
+    .addStringOption((option) =>
+      option
+        .setName('접수기간')
+        .setDescription('예: 7일, 48시간, 2026-08-20 23:59')
+        .setRequired(true)
+        .setMaxLength(40),
     )
     .addBooleanOption((option) =>
       option.setName('모두멘션').setDescription('모두에게 알릴지 여부').setRequired(false),
@@ -634,6 +648,11 @@ async function handleButton(interaction) {
     return;
   }
 
+  if (isRecruitCustomId(customId)) {
+    if (idIs(customId, RECRUIT_IDS.apply)) await handleRecruitApply(interaction);
+    return;
+  }
+
   if (isPaymentCustomId(customId)) {
     if (idIs(customId, PAYMENT_IDS.sent)) await handlePaymentSent(interaction);
     else if (idIs(customId, PAYMENT_IDS.ok)) await handlePaymentConfirm(interaction);
@@ -646,6 +665,11 @@ async function handleModal(interaction) {
 
   if (idIs(customId, REVIEW_IDS.form)) {
     await handleReviewSubmit(interaction);
+    return;
+  }
+
+  if (isRecruitCustomId(customId) && idIs(customId, RECRUIT_IDS.form)) {
+    await handleRecruitSubmit(interaction);
     return;
   }
 

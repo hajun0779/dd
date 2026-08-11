@@ -441,6 +441,39 @@ export async function handleInviteRankCommand(interaction) {
 }
 
 // ---------------------------------------------------------------------------
+//  들어온 사람 기억하기
+//
+//  나갔다 다시 들어와도 수가 또 오르지 않도록, 이미 센 사람을 기록에 담아 둡니다.
+//  기록 메시지는 1900자까지라 사람 번호를 36진수로 줄여서 담고, 최근 사람만 남깁니다.
+// ---------------------------------------------------------------------------
+
+export const JOINED_CAP = 80;
+
+export function packId(userId) {
+  try {
+    return BigInt(String(userId)).toString(36);
+  } catch {
+    return String(userId);
+  }
+}
+
+export function unpackJoined(text) {
+  return String(text ?? '').split(',').filter((item) => item.length > 0);
+}
+
+export function hasCounted(record, userId) {
+  return unpackJoined(record?.joined).includes(packId(userId));
+}
+
+/** 센 사람 목록에 더합니다. 넘치면 오래된 쪽부터 뺍니다. */
+export function addCounted(record, userId) {
+  const list = unpackJoined(record?.joined);
+  const packed = packId(userId);
+  if (!list.includes(packed)) list.push(packed);
+  return list.slice(-JOINED_CAP).join(',');
+}
+
+// ---------------------------------------------------------------------------
 //  들어왔을 때 기록 남기기
 // ---------------------------------------------------------------------------
 
@@ -477,9 +510,28 @@ export async function logInviteJoin(member) {
   // 봇이 만든 코드가 아니면 기록하지 않습니다.
   if (!record) return null;
 
-  const count = (record.count ?? 0) + 1;
+  // 이미 이 코드로 센 사람이면 다시 세지 않습니다.
+  const again = hasCounted(record, member.id);
+  const count = again ? (record.count ?? 0) : (record.count ?? 0) + 1;
+
+  if (again) {
+    await postInviteLog(client, {
+      color: config.colors.warning,
+      title: '초대 기록 (다시 들어옴)',
+      description: `<@${member.id}> 님이 <@${record.ownerId}> 님의 초대로 다시 들어왔습니다.`,
+      code: result.code,
+      count,
+      extra: [{ name: '처리', value: '이미 센 사람이라 수를 늘리지 않았습니다.' }],
+    });
+    log.info(`초대 다시 들어옴: ${member.user?.tag ?? member.id} <- ${result.code}`);
+    return { ...record, count, code: result.code, counted: false };
+  }
+
   try {
-    await updateRecord(client, MARKERS.inviteCode, result.code, { count });
+    await updateRecord(client, MARKERS.inviteCode, result.code, {
+      count,
+      joined: addCounted(record, member.id),
+    });
   } catch (error) {
     log.debug('초대 기록을 고치지 못했습니다.', error?.message ?? error);
   }
@@ -500,31 +552,246 @@ export async function logInviteJoin(member) {
   dm.allowedMentions = { parse: [] };
   await sendDm(client, record.ownerId, dm);
 
-  if (config.inviteLogChannelId) {
-    const channel = await client.channels.fetch(config.inviteLogChannelId).catch(() => null);
-    if (channel?.isTextBased?.()) {
-      const post = payload(
+  await postInviteLog(client, {
+    color: config.colors.neutral,
+    title: '초대 기록',
+    description: `<@${member.id}> 님이 <@${record.ownerId}> 님의 초대로 들어왔습니다.`,
+    code: result.code,
+    count,
+  });
+
+  log.info(`초대 기록: ${member.user?.tag ?? member.id} <- ${result.code} (${count}명)`);
+  return { ...record, count, code: result.code, counted: true };
+}
+
+/** 초대 기록 채널에 한 줄 남깁니다. 나중에 /초대복구 가 이 글을 다시 읽습니다. */
+async function postInviteLog(client, { color, title, description, code, count, extra = [] }) {
+  if (!config.inviteLogChannelId) return;
+
+  const channel = await client.channels.fetch(config.inviteLogChannelId).catch(() => null);
+  if (!channel?.isTextBased?.()) return;
+
+  const post = payload(
+    panel({
+      color,
+      title,
+      description,
+      fields: [
+        { name: '코드', value: code },
+        { name: '이 코드로 들어온 사람', value: `${count}명` },
+        { name: '들어온 시간', value: formatKst(Date.now()) },
+        ...extra,
+      ],
+      footer: `${config.brandName} 초대`,
+    }),
+  );
+  post.allowedMentions = { parse: [] };
+
+  await channel.send(post).catch((error) => {
+    log.warn('초대 기록을 올리지 못했습니다.', error?.message ?? error);
+  });
+}
+
+// ---------------------------------------------------------------------------
+//  /초대복구
+//
+//  나갔다 다시 들어온 사람 때문에 부풀려진 수를 되돌립니다.
+//  기록 채널에 남은 글을 다시 읽어서, 사람마다 한 번씩만 세고 다시 저장합니다.
+// ---------------------------------------------------------------------------
+
+/** 컨테이너 안에 있는 글을 전부 긁어옵니다. */
+function collectText(components, out = []) {
+  for (const item of components ?? []) {
+    if (typeof item?.content === 'string') out.push(item.content);
+    if (Array.isArray(item?.components)) collectText(item.components, out);
+    if (Array.isArray(item?.accessory?.components)) collectText(item.accessory.components, out);
+  }
+  return out;
+}
+
+const JOIN_LINE = /<@!?(\d+)>\s*님이\s*<@!?(\d+)>\s*님의 초대로/;
+const CODE_LINE = /\*\*코드\*\*\n(\S+)/;
+
+/** 기록 채널 글 하나에서 (코드, 들어온 사람) 을 뽑아냅니다. */
+export function parseInviteLog(message) {
+  const text = collectText(message?.components).join('\n');
+  const join = text.match(JOIN_LINE);
+  const code = text.match(CODE_LINE);
+  if (!join || !code) return null;
+  return { code: code[1], userId: join[1], ownerId: join[2] };
+}
+
+/** 기록 채널을 훑어 코드마다 들어온 사람 목록을 만듭니다. */
+export async function scanInviteLog(client, { pages = 10 } = {}) {
+  if (!config.inviteLogChannelId) return null;
+
+  const channel = await client.channels.fetch(config.inviteLogChannelId).catch(() => null);
+  if (!channel?.isTextBased?.()) return null;
+
+  const byCode = new Map();
+  let before;
+  let scanned = 0;
+
+  for (let page = 0; page < pages; page += 1) {
+    const batch = await channel.messages
+      .fetch({ limit: 100, ...(before ? { before } : {}) })
+      .catch(() => null);
+
+    if (!batch || batch.size === 0) break;
+
+    // 오래된 것부터 봐야 들어온 순서가 유지됩니다.
+    const ordered = [...batch.values()].reverse();
+    for (const message of ordered) {
+      scanned += 1;
+      const found = parseInviteLog(message);
+      if (!found) continue;
+      if (!byCode.has(found.code)) byCode.set(found.code, []);
+      const list = byCode.get(found.code);
+      if (!list.includes(found.userId)) list.push(found.userId);
+    }
+
+    const oldestFirst = [...batch.values()];
+    before = oldestFirst[oldestFirst.length - 1].id;
+    if (batch.size < 100) break;
+  }
+
+  return { byCode, scanned };
+}
+
+export async function handleInviteRepairCommand(interaction) {
+  await interaction.reply(
+    payload(neutralPanel('잠시만 기다려 주세요', '초대 기록을 다시 세고 있습니다.'), {
+      ephemeral: true,
+    }),
+  );
+
+  const sub = interaction.options.getSubcommand();
+
+  // --- 손으로 고치기 ---
+  if (sub === '수동') {
+    const code = interaction.options.getString('코드').trim();
+    const wanted = interaction.options.getInteger('인원');
+
+    let record;
+    try {
+      record = await getRecord(interaction.client, MARKERS.inviteCode, code);
+    } catch (error) {
+      await interaction.editReply(editPayload(storageErrorPanel(error)));
+      return;
+    }
+
+    if (!record) {
+      await interaction.editReply(
+        editPayload(errorPanel('찾지 못했습니다', '봇이 만든 코드가 아닙니다.')),
+      );
+      return;
+    }
+
+    const before = record.count ?? 0;
+    try {
+      await updateRecord(interaction.client, MARKERS.inviteCode, code, { count: wanted });
+    } catch (error) {
+      await interaction.editReply(editPayload(storageErrorPanel(error)));
+      return;
+    }
+
+    await interaction.editReply(
+      editPayload(
         panel({
-          color: config.colors.neutral,
-          title: '초대 기록',
-          description: `<@${member.id}> 님이 <@${record.ownerId}> 님의 초대로 들어왔습니다.`,
+          color: config.colors.success,
+          title: '고쳤습니다',
+          description: `코드 ${code}`,
           fields: [
-            { name: '코드', value: result.code },
-            { name: '이 코드로 들어온 사람', value: `${count}명` },
-            { name: '들어온 시간', value: formatKst(Date.now()) },
+            { name: '주인', value: `<@${record.ownerId}>` },
+            { name: '바뀐 값', value: `${before}명 -> ${wanted}명` },
           ],
           footer: `${config.brandName} 초대`,
         }),
-      );
-      post.allowedMentions = { parse: [] };
-      await channel.send(post).catch((error) => {
-        log.warn('초대 기록을 올리지 못했습니다.', error?.message ?? error);
+      ),
+    );
+    log.info(`초대 수 수동 수정: ${code} ${before} -> ${wanted} (${interaction.user.tag})`);
+    return;
+  }
+
+  // --- 기록 채널에서 되찾기 ---
+  const scanned = await scanInviteLog(interaction.client);
+
+  if (!scanned) {
+    await interaction.editReply(
+      editPayload(
+        errorPanel(
+          '되찾을 곳이 없습니다',
+          [
+            '초대 기록 채널이 없어서 예전 기록을 다시 읽을 수 없습니다.',
+            '.env 의 INVITE_LOG_CHANNEL_ID 를 채우면 앞으로는 되찾을 수 있습니다.',
+            '지금 수를 직접 고치시려면 `/초대복구 수동` 을 써 주세요.',
+          ].join('\n'),
+        ),
+      ),
+    );
+    return;
+  }
+
+  let records;
+  try {
+    records = await listRecords(interaction.client, MARKERS.inviteCode);
+  } catch (error) {
+    await interaction.editReply(editPayload(storageErrorPanel(error)));
+    return;
+  }
+
+  const mine = records.filter((record) => record.guildId === interaction.guildId);
+  const changes = [];
+
+  for (const record of mine) {
+    const people = scanned.byCode.get(record.code);
+    if (!people) continue;
+
+    const before = record.count ?? 0;
+    if (before === people.length) continue;
+
+    try {
+      await updateRecord(interaction.client, MARKERS.inviteCode, record.code, {
+        count: people.length,
+        joined: people.slice(-JOINED_CAP).map(packId).join(','),
       });
+      changes.push({ code: record.code, ownerId: record.ownerId, before, after: people.length });
+    } catch (error) {
+      log.debug(`초대 복구 실패 (${record.code})`, error?.message ?? error);
     }
   }
 
-  log.info(`초대 기록: ${member.user?.tag ?? member.id} <- ${result.code} (${count}명)`);
-  return { ...record, count, code: result.code };
+  const fields = [
+    { name: '읽은 기록', value: `${scanned.scanned}개` },
+    { name: '확인한 코드', value: `${mine.length}개` },
+  ];
+
+  if (changes.length > 0) {
+    fields.push({
+      name: '고친 코드',
+      value: changes
+        .map((c) => `${c.code} · <@${c.ownerId}> · ${c.before}명 -> ${c.after}명`)
+        .join('\n')
+        .slice(0, 900),
+    });
+  }
+
+  const message = editPayload(
+    panel({
+      color: changes.length > 0 ? config.colors.success : config.colors.neutral,
+      title: '초대 복구',
+      description:
+        changes.length > 0
+          ? `${changes.length}개 코드의 수를 다시 셌습니다.`
+          : '다시 셀 것이 없었습니다.',
+      fields,
+      footer: `${config.brandName} 초대`,
+    }),
+  );
+  message.allowedMentions = { parse: [] };
+
+  await interaction.editReply(message);
+  log.info(`초대 복구: ${changes.length}개 고침 (${interaction.user.tag})`);
 }
 
 /** 환영 메시지에 넣을 한 줄을 만듭니다. */

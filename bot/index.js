@@ -56,6 +56,7 @@ import {
   handleInviteCreate,
   handleInviteDelete,
   handleInviteRankCommand,
+  handleInviteRepairCommand,
   logInviteJoin,
   primeInvites,
   syncGuild,
@@ -166,6 +167,25 @@ const COMMANDS = applyDefaultPermissions([
         .setMinValue(1)
         .setMaxValue(25)
         .setRequired(false),
+    ),
+
+  new SlashCommandBuilder()
+    .setName('초대복구')
+    .setDescription('나갔다 다시 들어와 부풀려진 초대 수를 되돌립니다.')
+    .setContexts(InteractionContextType.Guild)
+    .addSubcommand((sub) =>
+      sub.setName('자동').setDescription('초대 기록 채널을 다시 읽어 사람마다 한 번씩만 셉니다.'),
+    )
+    .addSubcommand((sub) =>
+      sub
+        .setName('수동')
+        .setDescription('코드 하나의 수를 직접 정합니다.')
+        .addStringOption((option) =>
+          option.setName('코드').setDescription('초대 코드').setRequired(true).setMaxLength(30),
+        )
+        .addIntegerOption((option) =>
+          option.setName('인원').setDescription('맞는 인원').setRequired(true).setMinValue(0),
+        ),
     ),
 
   new SlashCommandBuilder()
@@ -604,6 +624,10 @@ async function handleCommand(interaction) {
 
     case '초대랭킹':
       await handleInviteRankCommand(interaction);
+      return;
+
+    case '초대복구':
+      await handleInviteRepairCommand(interaction);
       return;
 
     case '문의안내':

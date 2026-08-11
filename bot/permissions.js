@@ -26,6 +26,7 @@ export const COMMAND_ACCESS = {
   채용공고: 'staff',
   초대코드: 'everyone',
   초대랭킹: 'everyone',
+  초대복구: 'admin',
   직원명단: 'staff',
   직원명단설정: 'staff',
   파트너쉽: 'staff',

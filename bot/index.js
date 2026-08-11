@@ -89,6 +89,10 @@ import {
   handleRepairPick,
   handleAssignReject,
   handleAssignRejectForm,
+  handleCancel,
+  handleCancelForm,
+  handleComplete,
+  handleCompleteForm,
   handleExtend,
   handleFieldListCommand,
   handleFieldRemoveCommand,
@@ -686,6 +690,8 @@ async function handleButton(interaction) {
     else if (idIs(customId, ASSIGN_IDS.adjustReject)) await handleAdjustReject(interaction);
     else if (idIs(customId, ASSIGN_IDS.adjust)) await handleAdjustRequest(interaction);
     else if (idIs(customId, ASSIGN_IDS.extend)) await handleExtend(interaction);
+    else if (idIs(customId, ASSIGN_IDS.complete)) await handleComplete(interaction);
+    else if (idIs(customId, ASSIGN_IDS.cancel)) await handleCancel(interaction);
     return;
   }
 
@@ -727,6 +733,8 @@ async function handleModal(interaction) {
     else if (idIs(customId, ASSIGN_IDS.rejectForm)) await handleAssignRejectForm(interaction);
     else if (idIs(customId, ASSIGN_IDS.adjustRejectForm)) await handleAdjustRejectForm(interaction);
     else if (idIs(customId, ASSIGN_IDS.adjustForm)) await handleAdjustForm(interaction);
+    else if (idIs(customId, ASSIGN_IDS.completeForm)) await handleCompleteForm(interaction);
+    else if (idIs(customId, ASSIGN_IDS.cancelForm)) await handleCancelForm(interaction);
     return;
   }
 

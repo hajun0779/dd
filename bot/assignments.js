@@ -70,6 +70,10 @@ export const ASSIGN_IDS = {
   extend: 'assign:extend',
   repairPick: 'assign:rpick',
   repairForm: 'assign:rnew',
+  complete: 'assign:done',
+  completeForm: 'assign:doneform',
+  cancel: 'assign:cancel',
+  cancelForm: 'assign:cancelform',
 };
 
 const STATUS_LABEL = {
@@ -77,7 +81,22 @@ const STATUS_LABEL = {
   accepted: '진행 중',
   rejected: '거절됨',
   overdue: '기간 지남',
+  done: '완료',
+  cancelled: '중단됨',
 };
+
+/** 아직 진행 중인 상태인지 */
+export function isOpenStatus(status) {
+  return status === 'pending' || status === 'accepted' || status === 'overdue';
+}
+
+/** 담당자가 누를 업무 완료 버튼 */
+function completeButton(record) {
+  return new ButtonBuilder()
+    .setCustomId(`${ASSIGN_IDS.complete}:${record.id}`)
+    .setLabel('업무 완료')
+    .setStyle(ButtonStyle.Success);
+}
 
 // --- 권한 ---
 
@@ -767,6 +786,12 @@ function buildListContainer(record) {
       { name: '배당 시각', value: formatKst(record.createdAt) },
       { name: '상태', value: STATUS_LABEL[record.status] ?? record.status },
     ],
+    buttons: [
+      new ButtonBuilder()
+        .setCustomId(`${ASSIGN_IDS.cancel}:${record.id}`)
+        .setLabel('업무 중단')
+        .setStyle(ButtonStyle.Danger),
+    ],
     footer: text.footer,
   });
 }
@@ -895,6 +920,10 @@ export async function handleAssignAcceptForm(interaction) {
           .setCustomId(`${ASSIGN_IDS.adjust}:${record.id}`)
           .setLabel('기간 조정')
           .setStyle(ButtonStyle.Secondary),
+        new ButtonBuilder()
+          .setCustomId(`${ASSIGN_IDS.cancel}:${record.id}`)
+          .setLabel('업무 중단')
+          .setStyle(ButtonStyle.Danger),
       ],
       footer: FOOTER,
     }),
@@ -919,6 +948,25 @@ export async function handleAssignAcceptForm(interaction) {
   );
 
   await disableOffer(interaction, '수락함');
+
+  // 끝냈을 때 누를 버튼을 따로 보내 둡니다.
+  await sendDm(
+    interaction.client,
+    record.userId,
+    payload(
+      panel({
+        color: config.colors.primary,
+        title: '진행 중',
+        description: `**${record.title}**\n\n다 끝내셨으면 아래 버튼을 눌러 주세요.`,
+        fields: [
+          ...(record.project ? [{ name: '프로젝트', value: record.project }] : []),
+          { name: '기간', value: `${formatKst(dueAt)} 까지` },
+        ],
+        buttons: [completeButton(record)],
+        footer: labels(record).footer,
+      }),
+    ),
+  );
 }
 
 export async function handleAssignReject(interaction) {
@@ -1313,6 +1361,246 @@ export async function handleExtend(interaction) {
   );
 }
 
+// --- 업무 완료 ---
+
+export async function handleComplete(interaction) {
+  const id = interaction.customId.slice(`${ASSIGN_IDS.complete}:`.length);
+
+  const modal = new ModalBuilder()
+    .setCustomId(`${ASSIGN_IDS.completeForm}:${id}`)
+    .setTitle('업무 완료');
+
+  modal.addComponents(
+    new ActionRowBuilder().addComponents(
+      new TextInputBuilder()
+        .setCustomId('result')
+        .setLabel('완료 보고')
+        .setPlaceholder('무엇을 어떻게 마쳤는지, 결과물 링크가 있으면 함께 적어 주세요.')
+        .setStyle(TextInputStyle.Paragraph)
+        .setMaxLength(900)
+        .setRequired(true),
+    ),
+  );
+
+  await interaction.showModal(modal);
+}
+
+export async function handleCompleteForm(interaction) {
+  const id = interaction.customId.slice(`${ASSIGN_IDS.completeForm}:`.length);
+  const result = interaction.fields.getTextInputValue('result').trim();
+
+  await interaction.reply(
+    payload(neutralPanel('잠시만 기다려 주세요', '완료를 처리하고 있습니다.', { footer: FOOTER }), {
+      ephemeral: true,
+    }),
+  );
+
+  let record;
+  try {
+    record = await getRecord(interaction.client, MARKERS.assignment, id);
+  } catch (error) {
+    await interaction.editReply(editPayload(storageErrorPanel(error)));
+    return;
+  }
+
+  if (!record) {
+    await interaction.editReply(
+      editPayload(errorPanel('찾지 못했습니다', '이미 처리되었거나 없는 기록입니다.', { footer: FOOTER })),
+    );
+    return;
+  }
+
+  if (record.userId !== interaction.user.id) {
+    await interaction.editReply(
+      editPayload(errorPanel('누를 수 없습니다', '맡으신 분만 누를 수 있습니다.', { footer: FOOTER })),
+    );
+    return;
+  }
+
+  if (!isOpenStatus(record.status)) {
+    await interaction.editReply(
+      editPayload(
+        neutralPanel('이미 끝난 업무입니다', `지금 상태는 ${STATUS_LABEL[record.status] ?? record.status} 입니다.`, {
+          footer: FOOTER,
+        }),
+      ),
+    );
+    return;
+  }
+
+  const completedAt = Date.now();
+  const late = record.dueAt && completedAt > record.dueAt;
+
+  try {
+    record = await updateRecord(interaction.client, MARKERS.assignment, id, {
+      status: 'done',
+      completedAt,
+      result,
+      lastNoticeAt: null,
+    });
+  } catch (error) {
+    await interaction.editReply(editPayload(storageErrorPanel(error)));
+    return;
+  }
+
+  const text = labels(record);
+  const container = panel({
+    color: config.colors.success,
+    title: `${text.listTitle.replace('목록', '')} 완료`.trim(),
+    description: `**${record.title}**`,
+    fields: [
+      ...(record.project ? [{ name: '프로젝트', value: record.project }] : []),
+      { name: '담당', value: `<@${record.userId}>` },
+      { name: '완료 보고', value: result },
+      { name: '완료 시각', value: formatKst(completedAt) },
+      ...(record.dueAt
+        ? [
+            {
+              name: '기간',
+              value: late
+                ? `${formatKst(record.dueAt)} 까지 (${formatDuration(completedAt - record.dueAt)} 늦음)`
+                : `${formatKst(record.dueAt)} 까지 (${formatDuration(record.dueAt - completedAt)} 남기고 끝냄)`,
+            },
+          ]
+        : []),
+    ],
+    footer: text.footer,
+  });
+
+  await postToChannel(interaction.client, config.assignStatusChannelId, container);
+  await notifyAdmins(interaction.client, await fetchGuild(interaction.client, record.guildId), container);
+
+  await interaction.editReply(
+    editPayload(
+      successPanel('완료했습니다', '수고하셨습니다. 담당자에게 전달했습니다.', { footer: text.footer }),
+    ),
+  );
+
+  await disableOffer(interaction, '완료함');
+  log.info(`업무 완료: ${record.title} (${interaction.user.tag})`);
+}
+
+// --- 업무 중단 ---
+
+export async function handleCancel(interaction) {
+  const id = interaction.customId.slice(`${ASSIGN_IDS.cancel}:`.length);
+
+  if (!isAdmin(interaction.member)) {
+    await interaction.reply(payload(deniedPanelDefault(), { ephemeral: true }));
+    return;
+  }
+
+  const modal = new ModalBuilder()
+    .setCustomId(`${ASSIGN_IDS.cancelForm}:${id}`)
+    .setTitle('업무 중단');
+
+  modal.addComponents(
+    new ActionRowBuilder().addComponents(
+      new TextInputBuilder()
+        .setCustomId('reason')
+        .setLabel('중단 사유')
+        .setPlaceholder('왜 중단하는지 적어 주세요. 담당자에게 그대로 전달됩니다.')
+        .setStyle(TextInputStyle.Paragraph)
+        .setMaxLength(900)
+        .setRequired(true),
+    ),
+  );
+
+  await interaction.showModal(modal);
+}
+
+export async function handleCancelForm(interaction) {
+  const id = interaction.customId.slice(`${ASSIGN_IDS.cancelForm}:`.length);
+  const reason = interaction.fields.getTextInputValue('reason').trim();
+
+  await interaction.reply(
+    payload(neutralPanel('잠시만 기다려 주세요', '중단을 처리하고 있습니다.', { footer: FOOTER }), {
+      ephemeral: true,
+    }),
+  );
+
+  let record;
+  try {
+    record = await getRecord(interaction.client, MARKERS.assignment, id);
+  } catch (error) {
+    await interaction.editReply(editPayload(storageErrorPanel(error)));
+    return;
+  }
+
+  if (!record) {
+    await interaction.editReply(
+      editPayload(errorPanel('찾지 못했습니다', '이미 처리되었거나 없는 기록입니다.', { footer: FOOTER })),
+    );
+    return;
+  }
+
+  if (!isOpenStatus(record.status)) {
+    await interaction.editReply(
+      editPayload(
+        neutralPanel('이미 끝난 업무입니다', `지금 상태는 ${STATUS_LABEL[record.status] ?? record.status} 입니다.`, {
+          footer: FOOTER,
+        }),
+      ),
+    );
+    return;
+  }
+
+  try {
+    record = await updateRecord(interaction.client, MARKERS.assignment, id, {
+      status: 'cancelled',
+      cancelledAt: Date.now(),
+      cancelledBy: interaction.user.id,
+      cancelReason: reason,
+      lastNoticeAt: null,
+    });
+  } catch (error) {
+    await interaction.editReply(editPayload(storageErrorPanel(error)));
+    return;
+  }
+
+  const text = labels(record);
+  const container = panel({
+    color: config.colors.danger,
+    title: `${text.listTitle.replace('목록', '')} 중단`.trim(),
+    description: `**${record.title}**`,
+    fields: [
+      ...(record.project ? [{ name: '프로젝트', value: record.project }] : []),
+      { name: '담당', value: `<@${record.userId}>` },
+      { name: '중단 사유', value: reason },
+      { name: '중단한 사람', value: `<@${interaction.user.id}>` },
+      { name: '중단 시각', value: formatKst(record.cancelledAt) },
+    ],
+    footer: text.footer,
+  });
+
+  await postToChannel(interaction.client, config.assignStatusChannelId, container);
+  await notifyAdmins(interaction.client, await fetchGuild(interaction.client, record.guildId), container);
+
+  // 담당자에게도 알립니다.
+  await sendDm(
+    interaction.client,
+    record.userId,
+    payload(
+      panel({
+        color: config.colors.danger,
+        title: '업무가 중단되었습니다',
+        description: `**${record.title}**`,
+        fields: [
+          { name: '중단 사유', value: reason },
+          { name: '중단 시각', value: formatKst(record.cancelledAt) },
+        ],
+        footer: text.footer,
+      }),
+    ),
+  );
+
+  await interaction.editReply(
+    editPayload(successPanel('중단했습니다', '담당자에게 알렸습니다.', { footer: text.footer })),
+  );
+
+  log.info(`업무 중단: ${record.title} (${interaction.user.tag})`);
+}
+
 // --- 기간 지남 확인 ---
 
 /**
@@ -1374,6 +1662,7 @@ export async function checkOverdue(client) {
               .setCustomId(`${ASSIGN_IDS.extend}:${record.id}`)
               .setLabel(`${config.extendHours}시간 연장`)
               .setStyle(ButtonStyle.Primary),
+            completeButton(record),
           ],
           footer: FOOTER,
         }),

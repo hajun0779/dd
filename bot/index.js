@@ -33,6 +33,7 @@ import {
   handleTicketNoticeCommand,
 } from './notice.js';
 import { canUseCommand, deniedReason, hidesByDefault } from './permissions.js';
+import { HELP_CHOICES, handleConfigCheckCommand, handleHelpCommand } from './help.js';
 import {
   RECRUIT_CHOICES,
   RECRUIT_IDS,
@@ -127,6 +128,23 @@ function applyDefaultPermissions(commands) {
 const FIELD_CHOICES = WORK_FIELDS.map((field) => ({ name: field, value: field }));
 
 const COMMANDS = applyDefaultPermissions([
+  new SlashCommandBuilder()
+    .setName('도움말')
+    .setDescription('쓸 수 있는 명령을 봅니다.')
+    .setContexts(InteractionContextType.Guild)
+    .addStringOption((option) =>
+      option
+        .setName('분류')
+        .setDescription('보고 싶은 분류 (비우면 전부)')
+        .setRequired(false)
+        .addChoices(...HELP_CHOICES),
+    ),
+
+  new SlashCommandBuilder()
+    .setName('설정확인')
+    .setDescription('아직 안 채운 설정과 그래서 안 되는 기능을 봅니다.')
+    .setContexts(InteractionContextType.Guild),
+
   new SlashCommandBuilder()
     .setName('티켓패널')
     .setDescription('문의 패널을 다시 게시합니다.')
@@ -559,6 +577,14 @@ async function handleCommand(interaction) {
   }
 
   switch (interaction.commandName) {
+    case '도움말':
+      await handleHelpCommand(interaction);
+      return;
+
+    case '설정확인':
+      await handleConfigCheckCommand(interaction);
+      return;
+
     case '티켓패널': {
       await replyWorking(interaction, '문의 패널을 다시 게시하고 있습니다.');
       const sent = await deployTicketPanel(client);
